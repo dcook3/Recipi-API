@@ -8,6 +8,7 @@
     <UserSecretsId>124a3ed2-ac02-44d7-b4fa-4e81040b7667</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+    <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>

@@ -17,4 +17,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="RecipiDBlib">
+      <HintPath>..\RecipiDBlib\bin\Release\net7.0\RecipiDBlib.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

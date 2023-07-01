@@ -18,21 +18,20 @@ namespace Recipi_API.Controllers
             _context = context;
         }
 
-        [HttpGet("{postId}")]
-        public async Task<ActionResult<List<PostComment>>> GetComments(int postId)
-        {
-            //try
-            //{
-            //    List<PostComment> comments = DatabaseFunctions.GetPostComments(postId);
-            //    return Ok(comments);
-            //}
-            //catch (Exception ex)
-            //{
-            //    return BadRequest(ex.Message);
-            //}
-            return await _context.PostComments.Where(p => p.PostId == postId).ToListAsync();
+        //public async Task<ActionResult<List<PostComment>>> GetComments(int postId)
+        //{
+        //    try
+        //    {
+        //        List<PostComment> comments = DatabaseFunctions.GetPostComments(postId);
+        //        return Ok(comments);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
+        //    return await _context.PostComments.Where(p => p.PostId == postId).ToListAsync();
 
-        }
+        //}
         //[HttpPost]
         //public IActionResult PostComment(int postId, string comment)
         //{

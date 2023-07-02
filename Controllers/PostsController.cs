@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using RecipiDBlib.Models;
-using RecipiDBlib;
+using Recipi_API.Models;
 using Microsoft.EntityFrameworkCore;
+using Recipi_API.Services;
 
 namespace Recipi_API.Controllers
 {
@@ -11,76 +11,90 @@ namespace Recipi_API.Controllers
     [ApiController]
     public class PostsController : ControllerBase
     {
-        private readonly RecipiDbContext _context;
+        private readonly PostInteractionsService _interactionsService;
 
-        public PostsController(RecipiDbContext context)
+        public PostsController(PostInteractionsService service)
         {
-            _context = context;
+            _interactionsService = service;
         }
 
-        //public async Task<ActionResult<List<PostComment>>> GetComments(int postId)
-        //{
-        //    try
-        //    {
-        //        List<PostComment> comments = DatabaseFunctions.GetPostComments(postId);
-        //        return Ok(comments);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //    return await _context.PostComments.Where(p => p.PostId == postId).ToListAsync();
+        [HttpGet("{postId}/comments")]
+        public async Task<ActionResult> GetComments(int postId)
+        {
+            try
+            {
+                List<PostComment> comments = await _interactionsService.GetComments(postId);
+                if(comments.Count > 0)
+                {
+                    return Ok(comments);
+                }
+                return NotFound();
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
 
-        //}
-        //[HttpPost]
-        //public IActionResult PostComment(int postId, string comment)
-        //{
-        //    try
-        //    {
-        //        PostComment postComment = new PostComment();
-        //        postComment.PostId = postId;
-        //        postComment.Comment = comment;
-        //        postComment.CommentDatetime = DateTime.Now;
-        //        postComment.UserId = -1; //This is a placeholder until we have user routes with proper authentication. We'll need a function to return the HttpContext current user using our own User class.
-        //        return Ok(postComment);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //}
-        //[HttpPost]
-        //public IActionResult PostLike(int postId, int userId) 
-        //{
-        //    try
-        //    {
-        //        PostLike pl = new PostLike();
-        //        pl.PostId = postId;
-        //        pl.UserId = userId;
-        //        DatabaseFunctions.LikePost(pl);
-        //        return Ok();
-        //    }
-        //    catch (Exception ex) 
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //}
-        //[HttpPost]
-        //public IActionResult PostReportPost(int postId)
-        //{
-        //    try
-        //    {
-        //        PostReport postReport = new PostReport();
-        //        postReport.PostId = postId;
-        //        postReport.ReportedDatetime = DateTime.Now;
-        //        postReport.UserId = -1; //Same placeholder reasoning as above.
-        //        DatabaseFunctions.AddPostReport(postReport);
-        //        return Ok();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-        //}
+        [HttpPost("{postId}/comments")]
+        public async Task<ActionResult> PostComment(int postId, string comment)
+        {
+            try
+            {
+                int numRows = await _interactionsService.PostComment(postId, comment);
+                if(numRows > 0) 
+                {
+                    return Ok();
+                }
+                else 
+                {
+                    return BadRequest(); 
+                }
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+        [HttpPost("{postId}/like")]
+        public async Task<ActionResult> PostLike(int postId, int userId)
+        {
+            try
+            {
+                int numRows = await _interactionsService.PostLike(postId, userId);
+                if (numRows > 0)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+        [HttpPost("{postId}/report")]
+        public async Task<IActionResult> PostReport(int postId, string message)
+        {
+            try
+            {
+                int numRows = await _interactionsService.PostReport(postId, message);
+                if (numRows > 0)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
     }
 }

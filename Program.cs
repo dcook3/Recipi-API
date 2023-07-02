@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using RecipiDBlib.Models;
-using RecipiDBlib;
+using Recipi_API.Services;
+using Recipi_API.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,11 +8,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-builder.Services.AddDbContext<RecipiDbContext>();
+builder.Services.AddDbContextFactory<RecipiDbContext>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddSingleton<IPostInteractionsService, PostInteractionsService>();
 
 var app = builder.Build();
 

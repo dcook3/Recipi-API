@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using RecipiDBlib.Models;
+using Recipi_API.Models;
 
 namespace Recipi_API.Services
 {
-    public interface IPostCommentService
+    public interface IPostInteractionsService
     {
-        public Task<ActionResult<List<PostComment>>> GetComments(int postId);
+        public Task<List<PostComment>> GetComments(int postId);
         public Task<int> PostComment(int postId, string comment);
         public Task<int> PostLike(int postId, int userId);
         public Task<int> PostReport(int postId, string message);

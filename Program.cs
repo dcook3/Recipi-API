@@ -1,14 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Recipi_API.Services;
 using Recipi_API.Models;
+using Newtonsoft.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
-
-builder.Services.AddDbContextFactory<RecipiDbContext>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

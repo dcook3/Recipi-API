@@ -6,8 +6,8 @@ namespace Recipi_API.Services
     public interface IPostInteractionsService
     {
         public Task<List<PostComment>> GetComments(int postId);
-        public Task<int> PostComment(int postId, string comment);
+        public Task<int> PostComment(int postId, int userId, string comment);
         public Task<int> PostLike(int postId, int userId);
-        public Task<int> PostReport(int postId, string message);
+        public Task<int> PostReport(int postId, int userId, string message);
     }
 }

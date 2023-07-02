@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Recipi_API.Models;
 using Microsoft.EntityFrameworkCore;
 using Recipi_API.Services;
+using Microsoft.Extensions.Configuration.UserSecrets;
 
 namespace Recipi_API.Controllers
 {
@@ -11,9 +12,9 @@ namespace Recipi_API.Controllers
     [ApiController]
     public class PostsController : ControllerBase
     {
-        private readonly PostInteractionsService _interactionsService;
+        private readonly IPostInteractionsService _interactionsService;
 
-        public PostsController(PostInteractionsService service)
+        public PostsController(IPostInteractionsService service)
         {
             _interactionsService = service;
         }
@@ -30,19 +31,23 @@ namespace Recipi_API.Controllers
                 }
                 return NotFound();
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500);
+                if (ex.InnerException != null)
+                {
+                    return BadRequest(ex.InnerException.ToString());
+                }
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpPost("{postId}/comments")]
-        public async Task<ActionResult> PostComment(int postId, string comment)
+        public async Task<ActionResult> PostComment(int postId, int userId, string comment)
         {
             try
             {
-                int numRows = await _interactionsService.PostComment(postId, comment);
-                if(numRows > 0) 
+                int numRows = await _interactionsService.PostComment(postId, userId, comment);
+                if(numRows > 0)
                 {
                     return Ok();
                 }
@@ -51,9 +56,13 @@ namespace Recipi_API.Controllers
                     return BadRequest(); 
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500);
+                if(ex.InnerException != null)
+                {
+                    return BadRequest(ex.InnerException.ToString());
+                }
+                return BadRequest(ex.Message);
             }
         }
         [HttpPost("{postId}/like")]
@@ -71,17 +80,21 @@ namespace Recipi_API.Controllers
                     return BadRequest();
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500);
+                if (ex.InnerException != null)
+                {
+                    return BadRequest(ex.InnerException.ToString());
+                }
+                return BadRequest(ex.Message);
             }
         }
         [HttpPost("{postId}/report")]
-        public async Task<IActionResult> PostReport(int postId, string message)
+        public async Task<IActionResult> PostReport(int postId, int userId, string message)
         {
             try
             {
-                int numRows = await _interactionsService.PostReport(postId, message);
+                int numRows = await _interactionsService.PostReport(postId, userId, message);
                 if (numRows > 0)
                 {
                     return Ok();
@@ -91,9 +104,13 @@ namespace Recipi_API.Controllers
                     return BadRequest();
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500);
+                if (ex.InnerException != null)
+                {
+                    return BadRequest(ex.InnerException.ToString());
+                }
+                return BadRequest(ex.Message);
             }
         }
     }

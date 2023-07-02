@@ -192,17 +192,18 @@ public partial class RecipiDbContext : DbContext
 
         modelBuilder.Entity<PostLike>(entity =>
         {
-            entity.HasNoKey();
+            entity.HasKey(e => e.LikeId);
 
+            entity.Property(e => e.LikeId).HasColumnName("like_id");
             entity.Property(e => e.PostId).HasColumnName("post_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.Post).WithMany()
+            entity.HasOne(d => d.Post).WithMany(p => p.PostLikes)
                 .HasForeignKey(d => d.PostId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PostLikes_Posts");
 
-            entity.HasOne(d => d.User).WithMany()
+            entity.HasOne(d => d.User).WithMany(p => p.PostLikes)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PostLikes_Users");
@@ -210,20 +211,21 @@ public partial class RecipiDbContext : DbContext
 
         modelBuilder.Entity<PostMedium>(entity =>
         {
-            entity.HasNoKey();
+            entity.HasKey(e => e.PostMediaId);
 
+            entity.Property(e => e.PostMediaId).HasColumnName("post_media_id");
             entity.Property(e => e.MediaUrl)
                 .HasMaxLength(2043)
                 .HasColumnName("media_url");
             entity.Property(e => e.PostId).HasColumnName("post_id");
             entity.Property(e => e.StepId).HasColumnName("step_id");
 
-            entity.HasOne(d => d.Post).WithMany()
+            entity.HasOne(d => d.Post).WithMany(p => p.PostMediaNavigation)
                 .HasForeignKey(d => d.PostId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PostMedia_Posts");
 
-            entity.HasOne(d => d.Step).WithMany()
+            entity.HasOne(d => d.Step).WithMany(p => p.PostMedia)
                 .HasForeignKey(d => d.StepId)
                 .HasConstraintName("FK_PostMedia_RecipeSteps");
         });
@@ -276,20 +278,20 @@ public partial class RecipiDbContext : DbContext
 
         modelBuilder.Entity<RecipeCookbook>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("RecipeCookbook");
+            entity.HasKey(e => new { e.UserId, e.RecipeId });
 
+            entity.ToTable("RecipeCookbook");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
             entity.Property(e => e.RecipeOrder).HasColumnName("recipe_order");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.Recipe).WithMany()
+            entity.HasOne(d => d.Recipe).WithMany(p => p.RecipeCookbooks)
                 .HasForeignKey(d => d.RecipeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_RecipeCookbook_Recipes");
 
-            entity.HasOne(d => d.User).WithMany()
+            entity.HasOne(d => d.User).WithMany(p => p.RecipeCookbooks)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_RecipeCookbook_Users");
@@ -322,8 +324,9 @@ public partial class RecipiDbContext : DbContext
 
         modelBuilder.Entity<StepIngredient>(entity =>
         {
-            entity.HasNoKey();
+            entity.HasKey(e => new { e.StepId, e.IngredientId });
 
+            entity.Property(e => e.StepId).HasColumnName("step_id");
             entity.Property(e => e.IngredientId).HasColumnName("ingredient_id");
             entity.Property(e => e.IngredientMeasurementUnit)
                 .HasMaxLength(10)
@@ -331,14 +334,13 @@ public partial class RecipiDbContext : DbContext
             entity.Property(e => e.IngredientMeasurementValue)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("ingredient_measurement_value");
-            entity.Property(e => e.StepId).HasColumnName("step_id");
 
-            entity.HasOne(d => d.Ingredient).WithMany()
+            entity.HasOne(d => d.Ingredient).WithMany(p => p.StepIngredients)
                 .HasForeignKey(d => d.IngredientId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_StepIngredients_Ingredients");
 
-            entity.HasOne(d => d.Step).WithMany()
+            entity.HasOne(d => d.Step).WithMany(p => p.StepIngredients)
                 .HasForeignKey(d => d.StepId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_StepIngredients_RecipeSteps");
@@ -370,25 +372,25 @@ public partial class RecipiDbContext : DbContext
 
         modelBuilder.Entity<UserRelationship>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("UserRelationship");
+            entity.HasKey(e => new { e.InitiatingUserId, e.ReceivingUserId });
 
+            entity.ToTable("UserRelationship");
+
+            entity.Property(e => e.InitiatingUserId).HasColumnName("initiating_user_id");
+            entity.Property(e => e.ReceivingUserId).HasColumnName("receiving_user_id");
             entity.Property(e => e.InitiatedDatetime)
                 .HasPrecision(3)
                 .HasColumnName("initiated_datetime");
-            entity.Property(e => e.InitiatingUserId).HasColumnName("initiating_user_id");
-            entity.Property(e => e.ReceivingUserId).HasColumnName("receiving_user_id");
             entity.Property(e => e.Relationship)
                 .HasMaxLength(20)
                 .HasColumnName("relationship");
 
-            entity.HasOne(d => d.InitiatingUser).WithMany()
+            entity.HasOne(d => d.InitiatingUser).WithMany(p => p.UserRelationshipInitiatingUsers)
                 .HasForeignKey(d => d.InitiatingUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserRelationship_Users_Initiating");
 
-            entity.HasOne(d => d.ReceivingUser).WithMany()
+            entity.HasOne(d => d.ReceivingUser).WithMany(p => p.UserRelationshipReceivingUsers)
                 .HasForeignKey(d => d.ReceivingUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserRelationship_Users_Receiving");
@@ -396,21 +398,21 @@ public partial class RecipiDbContext : DbContext
 
         modelBuilder.Entity<UserRole>(entity =>
         {
-            entity.HasNoKey();
+            entity.HasKey(e => new { e.RoleId, e.UserId });
 
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.ExpirationDays).HasColumnName("expiration_days");
             entity.Property(e => e.GrantedDatetime)
                 .HasPrecision(3)
                 .HasColumnName("granted_datetime");
-            entity.Property(e => e.RoleId).HasColumnName("role_id");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.Role).WithMany()
+            entity.HasOne(d => d.Role).WithMany(p => p.UserRoles)
                 .HasForeignKey(d => d.RoleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserRoles_Roles");
 
-            entity.HasOne(d => d.User).WithMany()
+            entity.HasOne(d => d.User).WithMany(p => p.UserRoles)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserRoles_Users");

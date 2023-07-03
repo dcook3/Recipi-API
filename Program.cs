@@ -6,6 +6,15 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// set correct issuer and audience in appsettings
+string? HOST_ENV = System.Environment.GetEnvironmentVariable("ASPNETCORE_HOST_ENVIRONMENT");
+if (HOST_ENV == null)
+{
+    HOST_ENV = "Docker";
+}
+builder.Configuration.AddJsonFile($"appsettings.{HOST_ENV}.json");
+
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
     options.TokenValidationParameters = new TokenValidationParameters()
     {

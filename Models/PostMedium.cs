@@ -5,6 +5,8 @@ namespace Recipi_API.Models;
 
 public partial class PostMedium
 {
+    public int PostMediaId { get; set; }
+
     public int PostId { get; set; }
 
     public int? StepId { get; set; }

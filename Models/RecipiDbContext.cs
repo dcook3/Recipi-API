@@ -27,6 +27,8 @@ public partial class RecipiDbContext : DbContext
 
     public virtual DbSet<PostComment> PostComments { get; set; }
 
+    public virtual DbSet<PostLike> PostLikes { get; set; }
+
     public virtual DbSet<PostMedium> PostMedia { get; set; }
 
     public virtual DbSet<PostReport> PostReports { get; set; }
@@ -161,25 +163,6 @@ public partial class RecipiDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Posts_Users");
-
-            entity.HasMany(d => d.Users).WithMany(p => p.PostsNavigation)
-                .UsingEntity<Dictionary<string, object>>(
-                    "PostLike",
-                    r => r.HasOne<User>().WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_PostLikes_Users"),
-                    l => l.HasOne<Post>().WithMany()
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK_PostLikes_Posts"),
-                    j =>
-                    {
-                        j.HasKey("PostId", "UserId").HasName("PK_PostLikes_1");
-                        j.ToTable("PostLikes");
-                        j.IndexerProperty<int>("PostId").HasColumnName("post_id");
-                        j.IndexerProperty<int>("UserId").HasColumnName("user_id");
-                    });
         });
 
         modelBuilder.Entity<PostComment>(entity =>
@@ -205,6 +188,25 @@ public partial class RecipiDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PostComments_Users");
+        });
+
+        modelBuilder.Entity<PostLike>(entity =>
+        {
+            entity.HasKey(e => e.LikeId);
+
+            entity.Property(e => e.LikeId).HasColumnName("like_id");
+            entity.Property(e => e.PostId).HasColumnName("post_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Post).WithMany(p => p.PostLikes)
+                .HasForeignKey(d => d.PostId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PostLikes_Posts");
+
+            entity.HasOne(d => d.User).WithMany(p => p.PostLikes)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PostLikes_Users");
         });
 
         modelBuilder.Entity<PostMedium>(entity =>

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Recipi_API.Models;
@@ -48,7 +48,4 @@ public partial class User
     public virtual ICollection<UserRelationship> UserRelationshipReceivingUsers { get; set; } = new List<UserRelationship>();
 
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-
-
-    public virtual ICollection<Post> PostsNavigation { get; set; } = new List<Post>();
 }

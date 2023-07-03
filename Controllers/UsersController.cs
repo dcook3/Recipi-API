@@ -12,7 +12,7 @@ using System.Text;
 
 namespace Recipi_API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("/api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {

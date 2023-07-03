@@ -30,6 +30,7 @@ builder.Services.AddAuthentication();
 
 
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
@@ -62,6 +63,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddSingleton<UserService>();
+
+builder.Services.AddSingleton<IPostInteractionsService, PostInteractionsService>();
 
 var app = builder.Build();
 

@@ -42,11 +42,11 @@ namespace Recipi_API.Controllers
         }
 
         [HttpPost("{postId}/comments")]
-        public async Task<ActionResult> PostComment(int postId, int userId, string comment)
+        public async Task<ActionResult> PostComment(PostCommentData postComment)
         {
             try
             {
-                int numRows = await _interactionsService.PostComment(postId, userId, comment);
+                int numRows = await _interactionsService.PostComment(postComment.PostId, postComment.UserId, postComment.Comment);
                 if(numRows > 0)
                 {
                     return Ok();
@@ -66,11 +66,11 @@ namespace Recipi_API.Controllers
             }
         }
         [HttpPost("{postId}/like")]
-        public async Task<ActionResult> PostLike(int postId, int userId)
+        public async Task<ActionResult> PostLike(PostLikeData like)
         {
             try
             {
-                int numRows = await _interactionsService.PostLike(postId, userId);
+                int numRows = await _interactionsService.PostLike(like.PostId, like.UserId);
                 if (numRows > 0)
                 {
                     return Ok();
@@ -90,11 +90,11 @@ namespace Recipi_API.Controllers
             }
         }
         [HttpPost("{postId}/report")]
-        public async Task<IActionResult> PostReport(int postId, int userId, string message)
+        public async Task<IActionResult> PostReport(PostReportData report)
         {
             try
             {
-                int numRows = await _interactionsService.PostReport(postId, userId, message);
+                int numRows = await _interactionsService.PostReport(report.PostId, report.UserId, report.Message);
                 if (numRows > 0)
                 {
                     return Ok();

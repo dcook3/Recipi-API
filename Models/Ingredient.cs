@@ -16,4 +16,6 @@ public partial class Ingredient
     public string? IngredientIcon { get; set; }
 
     public virtual User CreatedByUser { get; set; } = null!;
+
+    public virtual ICollection<StepIngredient> StepIngredients { get; set; } = new List<StepIngredient>();
 }

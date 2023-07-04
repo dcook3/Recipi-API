@@ -6,6 +6,8 @@
 
         public string? IngredientDescription { get; set; }
 
+        public int CreatedByUserId { get; set; }
+
         public string? IngredientIcon { get; set; }
     }
 }

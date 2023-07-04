@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Recipi_API.Models.Data_Models;
 using Recipi_API.Models;
 using Microsoft.EntityFrameworkCore;
 using Recipi_API.Services;
@@ -35,9 +36,9 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return BadRequest(ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.ToString());
                 }
-                return BadRequest(ex.Message);
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -58,11 +59,11 @@ namespace Recipi_API.Controllers
             }
             catch (Exception ex)
             {
-                if(ex.InnerException != null)
+                if (ex.InnerException != null)
                 {
-                    return BadRequest(ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.ToString());
                 }
-                return BadRequest(ex.Message);
+                return StatusCode(500, ex.Message);
             }
         }
         [HttpPost("{postId}/like")]
@@ -84,9 +85,9 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return BadRequest(ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.ToString());
                 }
-                return BadRequest(ex.Message);
+                return StatusCode(500, ex.Message);
             }
         }
         [HttpPost("{postId}/report")]
@@ -108,9 +109,9 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return BadRequest(ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.ToString());
                 }
-                return BadRequest(ex.Message);
+                return StatusCode(500, ex.Message);
             }
         }
     }

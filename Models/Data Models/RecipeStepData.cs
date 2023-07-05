@@ -10,6 +10,8 @@
 
         public short StepOrder { get; set; }
 
+        public ICollection<PostMedium> PostMedia { get; set; } = new List<PostMedium>();
+
         public virtual ICollection<StepIngredient> StepIngredients { get; set; } = new List<StepIngredient>();
     }
 }

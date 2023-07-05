@@ -14,5 +14,5 @@ public partial class RecipeData
 
     public DateTime CreatedDatetime { get; set; }
 
-    public List<RecipeStep> RecipeSteps { get; set; }
+    public List<RecipeStep> RecipeSteps { get; set; } = new List<RecipeStep>();
 }

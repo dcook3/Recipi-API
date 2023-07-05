@@ -65,6 +65,8 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddSingleton<UserService>();
 
 builder.Services.AddSingleton<IPostInteractionsService, PostInteractionsService>();
+builder.Services.AddSingleton<IRecipeService, RecipeService>();
+builder.Services.AddSingleton<IIngredientsService, IngredientsService>();
 
 var app = builder.Build();
 

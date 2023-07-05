@@ -48,6 +48,7 @@ namespace Recipi_API.Controllers
         {
             Ingredient i = new();
             i.IngredientTitle = ingData.IngredientTitle;
+            i.CreatedByUserId = ingData.CreatedByUserId;
             if(ingData.IngredientDescription != null)
             {
                 i.IngredientDescription = ingData.IngredientDescription;

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Recipi_API.Services;
 using Recipi_API.Models;
 using Recipi_API.Models.Data_Models;
-using System.Globalization;
 
 namespace Recipi_API.Controllers
 {
@@ -34,7 +33,7 @@ namespace Recipi_API.Controllers
                 User? u = await _userService.GetUser(recipe.UserId);
                 if (u != null)
                 {
-                    r.User = u;
+                    r.UserId = u.UserId;
                 }
                 else
                 {
@@ -57,7 +56,7 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
@@ -92,20 +91,21 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
         }
 
         [HttpPut("{recipeId}")]
-        public async Task<ActionResult> UpdateRecipe(RecipeData recipeData)
+        public async Task<ActionResult> PutRecipe(RecipeData recipeData)
         {
             try
             {
                 Recipe r = await _recipeService.GetRecipeById(recipeData.RecipeId);
                 if (r != null)
                 {
+                    r.RecipeId = recipeData.RecipeId;
                     r.RecipeTitle = recipeData.RecipeTitle;
                     r.RecipeDescription = recipeData.RecipeDescription;
                     //Consider adding updated field to our data models. For now i will treat created fields as this.
@@ -140,7 +140,7 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
@@ -172,11 +172,12 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
         }
+
         //GetRecipeById
         [HttpGet("{recipeId}")]
         public async Task<ActionResult> GetRecipeById(int recipeId)
@@ -195,7 +196,7 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
@@ -218,7 +219,41 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                }
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost("{recipeId}/steps")]
+        public async Task<ActionResult> PostRecipeStep(RecipeStepData step)
+        {
+            try
+            {
+                RecipeStep rs = new();
+                rs.RecipeId = step.RecipeId;
+                rs.StepOrder = step.StepOrder;
+                rs.StepDescription = step.StepDescription;
+                if(step.StepIngredients.Count > 0)
+                {
+                    //I dont think this will add to the table... needs testing. Replace with a new db method located in recipes service if needed.
+                    rs.StepIngredients = step.StepIngredients;
+                }
+                rs.PostMedia = step.PostMedia;
+                if (await _recipeService.CreateRecipeStep(rs) > 0)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return BadRequest("The step was not added, please check submission.");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex.InnerException != null)
+                {
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
@@ -229,7 +264,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                RecipeStep r = await _recipeService.GetRecipeStepById(recipeId);
+                RecipeStep r = await _recipeService.GetRecipeStepById(stepId);
 
                 if (r != null)
                 {
@@ -241,13 +276,13 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
         }
         [HttpPut("{recipeId}/steps/{stepId}")]
-        public async Task<ActionResult> UpdateRecipeStep(int stepId, RecipeStepData recipeStepData)
+        public async Task<ActionResult> PutRecipeStep(int stepId, RecipeStepData recipeStepData)
         {
             try
             {
@@ -274,7 +309,7 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
@@ -288,8 +323,7 @@ namespace Recipi_API.Controllers
                 RecipeStep rs = await _recipeService.GetRecipeStepById(stepId);
                 if (rs != null)
                 {
-                    int numRows = await _recipeService.DeleteRecipeStep(rs);
-                    if (numRows > 0)
+                    if (await _recipeService.DeleteRecipeStep(rs) > 0)
                     {
                         return Ok();
                     }
@@ -304,7 +338,7 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }

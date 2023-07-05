@@ -57,7 +57,7 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
@@ -91,7 +91,7 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
@@ -124,7 +124,7 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }
@@ -156,7 +156,7 @@ namespace Recipi_API.Controllers
             {
                 if (ex.InnerException != null)
                 {
-                    return StatusCode(500, ex.InnerException.ToString());
+                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
                 }
                 return StatusCode(500, ex.Message);
             }

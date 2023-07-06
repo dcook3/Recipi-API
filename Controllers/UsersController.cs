@@ -14,6 +14,7 @@ namespace Recipi_API.Controllers
 {
     [Route("/api/[controller]")]
     [ApiController]
+    [AllowAnonymous]
     public class UsersController : ControllerBase
     {
 

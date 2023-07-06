@@ -15,5 +15,6 @@ namespace Recipi_API.Services
         public Task<int> CreateRecipeStep(RecipeStep step);
         public Task<int> UpdateRecipeStep(RecipeStep step);
         public Task<int> DeleteRecipeStep(RecipeStep step);
+        public Task<int> CreateRecipeStepIngredient(StepIngredient stepIngredient);
     }
 }

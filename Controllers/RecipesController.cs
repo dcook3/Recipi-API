@@ -236,8 +236,14 @@ namespace Recipi_API.Controllers
                 rs.StepDescription = step.StepDescription;
                 if(step.StepIngredients.Count > 0)
                 {
-                    //I dont think this will add to the table... needs testing. Replace with a new db method located in recipes service if needed.
-                    rs.StepIngredients = step.StepIngredients;
+                    foreach(Ingredient i in step.StepIngredients)
+                    {
+                        StepIngredient si = new StepIngredient();
+                        si.IngredientMeasurementValue = step.ingredientMeasuremnetValue;
+                        si.IngredientMeasurementUnit = step.ingredientMeasurementLabel;
+                        si.IngredientId = i.IngredientId;
+                        await _recipeService.CreateRecipeStepIngredient(si);
+                    }
                 }
                 rs.PostMedia = step.PostMedia;
                 if (await _recipeService.CreateRecipeStep(rs) > 0)

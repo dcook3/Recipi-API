@@ -76,5 +76,11 @@ namespace Recipi_API.Services
         {
             return await context.Recipes.Where(r => r.UserId == userId).ToListAsync();
         }
+
+        public async Task<int> CreateRecipeStepIngredient(StepIngredient stepIngredient)
+        {
+            context.StepIngredients.Add(stepIngredient); 
+            return await context.SaveChangesAsync();
+        }
     }
 }

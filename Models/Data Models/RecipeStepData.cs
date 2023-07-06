@@ -10,8 +10,11 @@
 
         public short StepOrder { get; set; }
 
+        public int ingredientMeasuremnetValue { get; set; }
+        public string ingredientMeasurementLabel { get; set; }
+
         public ICollection<PostMedium> PostMedia { get; set; } = new List<PostMedium>();
 
-        public virtual ICollection<StepIngredient> StepIngredients { get; set; } = new List<StepIngredient>();
+        public virtual ICollection<Ingredient> StepIngredients { get; set; } = new List<Ingredient>();
     }
 }

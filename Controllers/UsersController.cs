@@ -15,6 +15,7 @@ namespace Recipi_API.Controllers
     [Route("/api/[controller]")]
     [AllowAnonymous]
     [ApiController]
+    [AllowAnonymous]
     public class UsersController : ControllerBase
     {
 
@@ -49,8 +50,6 @@ namespace Recipi_API.Controllers
                 return NotFound();
             }
         }
-
-        [AllowAnonymous]
         [HttpPost("Login")]
         public async Task<IActionResult> Login(UserLogin login)
         {
@@ -96,8 +95,7 @@ namespace Recipi_API.Controllers
             return Ok(tokenString);
         }
 
-
-        [AllowAnonymous]
+        
         [HttpPost("Register")]
         public async Task<IActionResult> Register(UserRegistration registration)
         {

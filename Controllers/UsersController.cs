@@ -13,6 +13,7 @@ using System.Text;
 namespace Recipi_API.Controllers
 {
     [Route("/api/[controller]")]
+    [AllowAnonymous]
     [ApiController]
     public class UsersController : ControllerBase
     {

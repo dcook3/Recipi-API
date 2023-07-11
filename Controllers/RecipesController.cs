@@ -295,7 +295,14 @@ namespace Recipi_API.Controllers
                 RecipeStep step = await _recipeService.GetRecipeStepById(stepId);
                 if (step != null) 
                 {
-                    step.StepIngredients = recipeStepData.StepIngredients;
+                    foreach (Ingredient i in recipeStepData.StepIngredients)
+                    {
+                        StepIngredient si = new StepIngredient();
+                        si.IngredientMeasurementValue = recipeStepData.ingredientMeasuremnetValue;
+                        si.IngredientMeasurementUnit = recipeStepData.ingredientMeasurementLabel;
+                        si.IngredientId = i.IngredientId;
+                        await _recipeService.PutRecipeStepIngredient(si);
+                    }
                     step.StepOrder = recipeStepData.StepOrder;
                     step.StepDescription = recipeStepData.StepDescription;
 

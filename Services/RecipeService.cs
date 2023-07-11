@@ -82,5 +82,10 @@ namespace Recipi_API.Services
             context.StepIngredients.Add(stepIngredient); 
             return await context.SaveChangesAsync();
         }
+        public async Task<int> PutRecipeStepIngredient(StepIngredient stepIngredient)
+        {
+            context.StepIngredients.Update(stepIngredient);
+            return await context.SaveChangesAsync();
+        }
     }
 }

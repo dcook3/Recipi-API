@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Recipi_API.Models;
 using Recipi_API.Services;
@@ -101,13 +102,13 @@ namespace Recipi_API.Controllers
         public async Task<IActionResult> Me()
         {
 
-            var username = this.claims?.FindFirst("Username")?.Value;
-            if (this.claims == null || username.IsNullOrEmpty())
+            int userId;
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
             {
                 return BadRequest();
             }
 
-            var user = await userSvc.GetUser(username);
+            var user = await userSvc.GetUser(userId);
 
             if (user == null)
             {
@@ -127,7 +128,7 @@ namespace Recipi_API.Controllers
         }
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
-        [HttpGet("/username/{username}")]
+        [HttpGet("username/{username}")]
         public async Task<IActionResult> GetUserByUsername(string username)
         {
             int selfUserId;
@@ -136,7 +137,7 @@ namespace Recipi_API.Controllers
                 return BadRequest();
             }
 
-            User? foundUser = await userSvc.GetUser(username);
+            User? foundUser = await userSvc.GetUser(username, selfUserId);
             if(foundUser == null)
             {
                 return NotFound();
@@ -155,6 +156,11 @@ namespace Recipi_API.Controllers
                 }
             }
 
+            List<string> combinedRels = new List<string>();
+            combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
+                                       .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
+                                       .ToList();
+
             return Ok(new
             {
                 UserId = foundUser.UserId,
@@ -162,12 +168,13 @@ namespace Recipi_API.Controllers
                 Email = foundUser.Email,
                 ProfilePicture = foundUser.ProfilePicture,
                 Biography = foundUser.Biography,
-                RegisteredDateTime = foundUser.RegisteredDatetime
+                RegisteredDateTime = foundUser.RegisteredDatetime,
+                YourRelationships = combinedRels
             });
         }
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
-        [HttpGet("/id/{userId}")]
+        [HttpGet("id/{userId}")]
         public async Task<IActionResult> GetUserByUserId(int userId)
         {
             int selfUserId;
@@ -176,7 +183,7 @@ namespace Recipi_API.Controllers
                 return BadRequest();
             }
 
-            User? foundUser = await userSvc.GetUser(userId);
+            User? foundUser = await userSvc.GetUser(userId, selfUserId);
             if (foundUser == null)
             {
                 return NotFound();
@@ -195,6 +202,10 @@ namespace Recipi_API.Controllers
                 }
             }
 
+            List<string> combinedRels = new List<string>();
+            combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
+                                       .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
+                                       .ToList();
             return Ok(new
             {
                 UserId = foundUser.UserId,
@@ -202,15 +213,91 @@ namespace Recipi_API.Controllers
                 Email = foundUser.Email,
                 ProfilePicture = foundUser.ProfilePicture,
                 Biography = foundUser.Biography,
-                RegisteredDateTime = foundUser.RegisteredDatetime
+                RegisteredDateTime = foundUser.RegisteredDatetime,
+                YourRelationships = combinedRels
             });
+        }
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        [HttpPut()]
+        public async Task<IActionResult> UpdateProfile(UserProfileUpdate updates)
+        {
+            int userId;
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            {
+                return BadRequest();
+            }
+
+            User? user = await userSvc.GetUser(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (!updates.Username.IsNullOrEmpty() && await userSvc.CheckUser(updates.Username))
+            {
+                return Conflict("Username is already in use");
+            }
+
+
+            if (await userSvc.UpdateUserProfile(updates, user))
+            {
+                return Ok();
+            }
+            else
+            {
+                return StatusCode(500);
+            }
         }
 
 
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
-        [HttpPut("Friend/{recievingUserId}")]
-        public async Task<IActionResult> Friend(int recievingUserId)
+        [HttpGet("Friend")]
+        public async Task<IActionResult> GetFriends()
+        {
+            int userId;
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            {
+                return BadRequest();
+            }
+
+            var friends = await userSvc.GetFriends(userId);
+            return Ok(friends.Select(user =>
+                new
+                {
+                    UserId = user.UserId,
+                    Username = user.Username,
+                    Biography = user.Biography,
+                    ProfilePicture = user.ProfilePicture
+                }
+            ));
+        }
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        [HttpGet("Friend/Requests")]
+        public async Task<IActionResult> GetFriendRequests()
+        {
+            int userId;
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            {
+                return BadRequest();
+            }
+
+            var friendRequests = await userSvc.GetFriendRequests(userId);
+            return Ok(friendRequests.Select(user =>
+                new
+                {
+                    UserId = user.UserId,
+                    Username = user.Username,
+                    Biography = user.Biography,
+                    ProfilePicture = user.ProfilePicture
+                }
+            ));
+        }
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        [HttpPost("Friend/Request/{recievingUserId}")]
+        public async Task<IActionResult> FriendRequest(int recievingUserId)
         {
             int userId;
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
@@ -237,20 +324,14 @@ namespace Recipi_API.Controllers
             }
 
             var rels = await userSvc.GetRelationships(userId, recievingUserId);
+            var friendRequest = rels.Where(rels => rels.Relationship == "friendRequest").FirstOrDefault();
 
-            if (rels.Contains("friend"))
+            if(friendRequest != null)
             {
-                if(await userSvc.RemoveFriend(userId, recievingUserId))
-                {
-                    return Ok();
-                }
-                else
-                {
-                    return StatusCode(500);
-                }
+                return Conflict("A Friend Request has already been sent");
             }
 
-            if(await userSvc.AddFriend(userId, recievingUserId))
+            if(await userSvc.RequestFriend(userId, recievingUserId))
             {
                 return Ok();
             }
@@ -261,24 +342,149 @@ namespace Recipi_API.Controllers
         }
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
-        [HttpGet("Friends")]
-        public async Task<IActionResult> GetFriends()
+        [HttpPost("Friend/Accept/{recievingUserId}")]
+        public async Task<IActionResult> AcceptFriend(int recievingUserId)
         {
             int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Username")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
             {
                 return BadRequest();
             }
 
-            var friends = await userSvc.GetFriends(userId);
+            if (!await userSvc.CheckUser(recievingUserId))
+            {
+                return NotFound("User Not Found");
+            }
 
-            return Ok(friends);
+            var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
+            if ((int)blockStatus > 0)
+            {
+                if ((int)blockStatus == 2)
+                {
+                    return Unauthorized("User has been blocked");
+                }
+                else
+                {
+                    return Unauthorized("You have been blocked by user");
+                }
+            }
+
+            var rels = await userSvc.GetRelationships(userId, recievingUserId);
+            var friendRequest = rels.Where(rels => rels.Relationship == "friendRequest" && rels.ReceivingUserId == userId).FirstOrDefault();
+
+            if (friendRequest == null)
+            {
+                return NotFound("Friend request can't be found");
+            }
+
+            if (await userSvc.AcceptFriend(friendRequest))
+            {
+                return Ok();
+            }
+            else
+            {
+                return StatusCode(500);
+            }
         }
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        [HttpDelete("Friend/Deny/{recievingUserId}")]
+        public async Task<IActionResult> DenyFriend(int recievingUserId)
+        {
+            int userId;
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            {
+                return BadRequest();
+            }
+
+            if (!await userSvc.CheckUser(recievingUserId))
+            {
+                return NotFound("User Not Found");
+            }
+
+            var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
+            if ((int)blockStatus > 0)
+            {
+                if ((int)blockStatus == 2)
+                {
+                    return Unauthorized("User has been blocked");
+                }
+                else
+                {
+                    return Unauthorized("You have been blocked by user");
+                }
+            }
+
+            var rels = await userSvc.GetRelationships(userId, recievingUserId);
+            var friendRequest = rels.Where(rels => rels.Relationship == "friendRequest").FirstOrDefault();
+
+            if (friendRequest == null)
+            {
+                return NotFound("Friend request can't be found");
+            }
+
+            if (await userSvc.RemoveRelationship(friendRequest))
+            {
+                return Ok();
+            }
+            else
+            {
+                return StatusCode(500);
+            }
+        }
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        [HttpDelete("Friend/Remove/{recievingUserId}")]
+        public async Task<IActionResult> RemoveFriend(int recievingUserId)
+        {
+            int userId;
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            {
+                return BadRequest();
+            }
+
+            if (!await userSvc.CheckUser(recievingUserId))
+            {
+                return NotFound("User Not Found");
+            }
+
+            var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
+            if ((int)blockStatus > 0)
+            {
+                if ((int)blockStatus == 2)
+                {
+                    return Unauthorized("User has been blocked");
+                }
+                else
+                {
+                    return Unauthorized("You have been blocked by user");
+                }
+            }
+
+            var rels = await userSvc.GetRelationships(userId, recievingUserId);
+            var friend = rels.Where(rels => rels.Relationship == "friend").FirstOrDefault();
+
+            if (friend == null)
+            {
+                return NotFound("Friend request can't be found");
+            }
+
+            if (await userSvc.RemoveRelationship(friend))
+            {
+                return Ok();
+            }
+            else
+            {
+                return StatusCode(500);
+            }
+        }
+
+        
 
 
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
-        [HttpPut("Follow/{recievingUserId}")]
+        [HttpPost("Follow/{recievingUserId}")]
         public async Task<IActionResult> Follow(int recievingUserId)
         {
             int userId;
@@ -306,10 +512,12 @@ namespace Recipi_API.Controllers
             }
 
             var rels = await userSvc.GetRelationships(userId, recievingUserId);
+            var following = rels.Where(rels => rels.Relationship == "follow" &&
+                                                rels.InitiatingUserId == userId).FirstOrDefault();
 
-            if (rels.Contains("follow"))
+            if (following == null)
             {
-                if (await userSvc.UnfollowUser(userId, recievingUserId))
+                if (await userSvc.FollowUser(userId, recievingUserId))
                 {
                     return Ok();
                 }
@@ -319,7 +527,7 @@ namespace Recipi_API.Controllers
                 }
             }
 
-            if (await userSvc.FollowUser(userId, recievingUserId))
+            if (await userSvc.RemoveRelationship(following))
             {
                 return Ok();
             }
@@ -341,7 +549,15 @@ namespace Recipi_API.Controllers
 
             var followers = await userSvc.GetFollowers(userId);
 
-            return Ok(followers);
+            return Ok(followers.Select(user =>
+                new
+                {
+                    UserId = user.UserId,
+                    Username = user.Username,
+                    Biography = user.Biography,
+                    ProfilePicture = user.ProfilePicture
+                }
+            ));
         }
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
@@ -356,13 +572,20 @@ namespace Recipi_API.Controllers
 
             var following = await userSvc.GetFollowing(userId);
 
-            return Ok(following);
+            return Ok(following.Select(user =>
+                new
+                {
+                    UserId = user.UserId,
+                    Username = user.Username,
+                    Biography = user.Biography,
+                    ProfilePicture = user.ProfilePicture
+                }
+            ));
         }
 
 
-
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
-        [HttpPut("Block/{recievingUserId}")]
+        [HttpPost("Block/{recievingUserId}")]
         public async Task<IActionResult> Block(int recievingUserId)
         {
             int userId;
@@ -378,10 +601,12 @@ namespace Recipi_API.Controllers
 
             var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
             
-
             if ((int)blockStatus == 2)
             {
-                if (await userSvc.UnblockUser(userId, recievingUserId))
+                var rels = await userSvc.GetRelationships(userId, recievingUserId);
+                var blocking = rels.Where(rels => rels.Relationship == "block" &&
+                                                    rels.InitiatingUserId == userId).FirstOrDefault();
+                if (await userSvc.RemoveRelationship(blocking))
                 {
                     return Ok();
                 }
@@ -401,7 +626,6 @@ namespace Recipi_API.Controllers
             }
         }
 
-
-
+        
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Recipi_API.Models;
 
 namespace Recipi_API.Services
@@ -9,7 +10,17 @@ namespace Recipi_API.Services
 
 
         public async Task<User?> GetUser(int id) => await db.Users.Where(user => user.UserId == id).FirstOrDefaultAsync();
+        public async Task<User?> GetUser(int id, int selfUserId) => 
+            await db.Users.Where(user => user.UserId == id)
+                          .Include(user => user.UserRelationshipInitiatingUsers.Where(rel => rel.InitiatingUserId == selfUserId))
+                          .Include(user => user.UserRelationshipReceivingUsers.Where(rel => rel.ReceivingUserId == selfUserId))
+                    .FirstOrDefaultAsync();
         public async Task<User?> GetUser(string username) => await db.Users.Where(user => user.Username == username).FirstOrDefaultAsync();
+        public async Task<User?> GetUser(string username, int selfUserId) => 
+            await db.Users.Where(user => user.Username == username)
+                          .Include(user=> user.UserRelationshipInitiatingUsers.Where(rel => rel.InitiatingUserId == selfUserId))
+                          .Include(user=> user.UserRelationshipReceivingUsers.Where(rel => rel.ReceivingUserId == selfUserId))
+                    .FirstOrDefaultAsync();
 
         public async Task<bool> CreateUser(UserRegistration registration) {
 
@@ -51,39 +62,53 @@ namespace Recipi_API.Services
                                        .FirstOrDefaultAsync();
         }
 
-        public async Task<List<string>> GetRelationships(int userId1, int userId2) =>
+        public async Task<List<string>> GetRelationshipStrings(int userId1, int userId2) =>
             await db.UserRelationships.Where(rel => (rel.InitiatingUserId == userId1 || rel.InitiatingUserId == userId2) ||
                                                     (rel.ReceivingUserId == userId1 || rel.ReceivingUserId == userId2))
                                                     .Select(rel => rel.Relationship)
                                                     .ToListAsync();
+        public async Task<List<UserRelationship>> GetRelationships(int userId1, int userId2) =>
+            await db.UserRelationships.Where(rel => (rel.InitiatingUserId == userId1 || rel.InitiatingUserId == userId2) ||
+                                                    (rel.ReceivingUserId == userId1 || rel.ReceivingUserId == userId2))
+                                                    .ToListAsync();
 
-        public async Task<bool> AddFriend(int initiatingUserId, int recievingUserId)
+        public async Task<bool> RequestFriend(int initiatingUserId, int recievingUserId)
         {
             db.UserRelationships.Add(new UserRelationship() { 
                 InitiatingUserId = initiatingUserId,
                 ReceivingUserId = recievingUserId,
-                Relationship = "friend",
+                Relationship = "friendRequest",
                 InitiatedDatetime= DateTime.Now
             });
             var res = await db.SaveChangesAsync();
             return res == 1;
         }
-        public async Task<bool> RemoveFriend(int initiatingUserId, int recievingUserId)
+        public async Task<bool> AcceptFriend(UserRelationship rel)
         {
-            var rel = await db.UserRelationships.Where(rel => (rel.InitiatingUserId == initiatingUserId || rel.ReceivingUserId == recievingUserId) && rel.Relationship == "friend").FirstOrDefaultAsync();
+            if (rel.Relationship != "friendRequest") return false;
 
-            if (rel == null) return false;
-
-            db.UserRelationships.Remove(rel);               
+            rel.Relationship = "friend";
             var res = await db.SaveChangesAsync();
             return res == 1;
         }
-        public async Task<List<User>> GetFriends(int userId) =>
-            await db.UserRelationships.Where(rel => (rel.InitiatingUserId == userId || rel.ReceivingUserId == userId)
-                                                    && rel.Relationship == "friend")
-                                      .Select(rel => rel.ReceivingUser)
-                                      .ToListAsync();
 
+        public async Task<List<User>> GetFriends(int userId)
+        {
+            var friendingUser = await db.UserRelationships.Where(rel => rel.InitiatingUserId == userId && rel.Relationship == "friend")
+                                                      .Select(rel => rel.ReceivingUser)
+                                                      .ToListAsync();
+            var userFriending = await db.UserRelationships.Where(rel => rel.ReceivingUserId == userId && rel.Relationship == "friend")
+                                                      .Select(rel => rel.InitiatingUser)
+                                                      .ToListAsync();
+            
+            return friendingUser.Concat(userFriending).ToList();
+        }
+
+        public async Task<List<User>> GetFriendRequests(int userId) =>
+            await db.UserRelationships.Where(rel => rel.ReceivingUserId == userId && rel.Relationship == "friendRequest")
+                                                      .Select(rel => rel.ReceivingUser)
+                                                      .ToListAsync();
+        
         public async Task<bool> FollowUser(int initiatingUserId, int recievingUserId)
         {
             db.UserRelationships.Add(new UserRelationship()
@@ -96,16 +121,7 @@ namespace Recipi_API.Services
             var res = await db.SaveChangesAsync();
             return res == 1;
         }
-        public async Task<bool> UnfollowUser(int initiatingUserId, int recievingUserId)
-        {
-            var rel = await db.UserRelationships.Where(rel => (rel.InitiatingUserId == initiatingUserId || rel.ReceivingUserId == recievingUserId) && rel.Relationship == "follow").FirstOrDefaultAsync();
-
-            if (rel == null) return false;
-
-            db.UserRelationships.Remove(rel);
-            var res = await db.SaveChangesAsync();
-            return res == 1;
-        }
+    
         public async Task<List<User>> GetFollowing(int userId) =>
             await db.UserRelationships.Where(rel => rel.InitiatingUserId == userId && rel.Relationship == "follow")
                                       .Select(rel => rel.ReceivingUser)
@@ -164,15 +180,9 @@ namespace Recipi_API.Services
             var res = await db.SaveChangesAsync();
             return res == 1;
         }
-        public async Task<bool> UnblockUser(int initiatingUserId, int recievingUserId)
+
+        public async Task<bool> RemoveRelationship(UserRelationship rel)
         {
-            var rel = await db.UserRelationships.Where(rel => rel.InitiatingUserId == initiatingUserId && rel.Relationship == "block").FirstOrDefaultAsync();
-
-            if (rel == null)
-            {
-                return false;
-            }
-
             db.UserRelationships.Remove(rel);
             var res = await db.SaveChangesAsync();
             return res == 1;
@@ -194,7 +204,29 @@ namespace Recipi_API.Services
             return userCount > 0;
         }
 
+        public async Task<bool> UpdateUserProfile(UserProfileUpdate updates, User user)
+        {
+            if (!updates.Username.IsNullOrEmpty())
+            {
+                user.Username = updates.Username;
+            }   
+            if(!updates.ProfilePicture.IsNullOrEmpty())
+            {
+                user.ProfilePicture = updates.ProfilePicture;
+            }
+            if(!updates.Biography.IsNullOrEmpty())
+            {
+                user.Biography = updates.Biography;
+            }
+            var res = await db.SaveChangesAsync();
+            return res == 1;
+        }
+
         public async Task<Role?> GetRole(string roleName) => await db.Roles.Where(role => role.RoleName == roleName).FirstOrDefaultAsync();
 
+
+
+
+        
     }
 }

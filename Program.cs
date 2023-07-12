@@ -61,7 +61,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<UserService>();
 
 builder.Services.AddSingleton<IPostInteractionsService, PostInteractionsService>();

@@ -145,13 +145,13 @@ namespace Recipi_API.Controllers
             var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
             if ((int)blockStatus > 0)
             {
-                if ((int)blockStatus == 2)
+                if (blockStatus == BlockStatus.Blocked)
                 {
                     return Unauthorized("User has been blocked");
                 }
                 else
                 {
-                    return Unauthorized("You have been blocked by user");
+                    return NotFound();
                 }
             }
 
@@ -191,7 +191,7 @@ namespace Recipi_API.Controllers
                 }
                 else
                 {
-                    return Unauthorized("You have been blocked by user");
+                    return NotFound();
                 }
             }
 
@@ -232,7 +232,7 @@ namespace Recipi_API.Controllers
                 }
                 else
                 {
-                    return Unauthorized("You have been blocked by user");
+                    return NotFound();
                 }
             }
 
@@ -301,7 +301,7 @@ namespace Recipi_API.Controllers
                 }
                 else
                 {
-                    return Unauthorized("You have been blocked by user");
+                    return NotFound();
                 }
             }
 

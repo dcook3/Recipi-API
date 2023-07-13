@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Recipi_API.Services;
 using Recipi_API.Models;
 using Recipi_API.Models.Data_Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using System.Data;
 
 namespace Recipi_API.Controllers
 {
@@ -19,7 +22,7 @@ namespace Recipi_API.Controllers
             _userService = userService;
         }
 
-        //CreateRecipe
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost]
         public async Task<ActionResult> PostRecipe(RecipeData recipe)
         {
@@ -62,7 +65,7 @@ namespace Recipi_API.Controllers
             }
         }
 
-        //DeleteRecipe
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpDelete("{recipeId}")]
         public async Task<ActionResult> DeleteRecipe(int recipeId)
         {
@@ -97,6 +100,7 @@ namespace Recipi_API.Controllers
             }
         }
 
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPut("{recipeId}")]
         public async Task<ActionResult> PutRecipe(RecipeData recipeData)
         {
@@ -146,9 +150,9 @@ namespace Recipi_API.Controllers
             }
         }
 
-        //GetRecipes
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpGet]
-        public async Task<ActionResult> GetRecipes(int userId, string? sortBy)
+        public async Task<ActionResult> GetUserRecipes(int userId, string? sortBy)
         {
             try
             {
@@ -178,7 +182,7 @@ namespace Recipi_API.Controllers
             }
         }
 
-        //GetRecipeById
+        //No auth here due to the potential of this being called for non-user viewing of posts.
         [HttpGet("{recipeId}")]
         public async Task<ActionResult> GetRecipeById(int recipeId)
         {
@@ -201,6 +205,7 @@ namespace Recipi_API.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
 
         [HttpGet("{recipeId}/steps")]
         public async Task<ActionResult> GetRecipeSteps(int recipeId)
@@ -225,6 +230,7 @@ namespace Recipi_API.Controllers
             }
         }
 
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost("{recipeId}/steps")]
         public async Task<ActionResult> PostRecipeStep(RecipeStepData step)
         {
@@ -270,11 +276,11 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                RecipeStep r = await _recipeService.GetRecipeStepById(stepId);
+                RecipeStep step = await _recipeService.GetRecipeStepById(stepId);
 
-                if (r != null)
+                if (step != null)
                 {
-                    return Ok(r);
+                    return Ok(step);
                 }
                 return NotFound();
             }
@@ -287,6 +293,8 @@ namespace Recipi_API.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPut("{recipeId}/steps/{stepId}")]
         public async Task<ActionResult> PutRecipeStep(int stepId, RecipeStepData recipeStepData)
         {
@@ -327,7 +335,8 @@ namespace Recipi_API.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-        //DeleteRecipe
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpDelete("{recipeId}/steps/{stepId}")]
         public async Task<ActionResult> DeleteRecipeStep(int stepId)
         {

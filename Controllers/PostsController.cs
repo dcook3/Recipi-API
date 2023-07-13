@@ -5,18 +5,27 @@ using Recipi_API.Models;
 using Microsoft.EntityFrameworkCore;
 using Recipi_API.Services;
 using Microsoft.Extensions.Configuration.UserSecrets;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Security.Claims;
+using System.Diagnostics.Eventing.Reader;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Recipi_API.Controllers
 {
     [Route("/api/[controller]")]
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
     public class PostsController : ControllerBase
     {
         private readonly IPostInteractionsService _interactionsService;
+        private readonly ClaimsIdentity? _claims;
+        private readonly UserService _userService;
 
-        public PostsController(IPostInteractionsService service)
+        public PostsController(IPostInteractionsService service, ClaimsIdentity claims, UserService userService)
         {
             _interactionsService = service;
+            _claims = claims;
+            _userService = userService;
         }
 
         [HttpGet("{postId}/comments")]
@@ -27,6 +36,23 @@ namespace Recipi_API.Controllers
                 List<PostComment> comments = await _interactionsService.GetComments(postId);
                 if(comments.Count > 0)
                 {
+                    int currentId;
+                    if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                    {
+                        foreach (PostComment comment in comments)
+                        {
+                            BlockStatus blockStatus = await _userService.CheckBlock(currentId, comment.UserId);
+                            if (blockStatus == BlockStatus.Blocked)
+                            {
+                                comments.Remove(comment);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        return BadRequest("Must be logged in to see comments.");
+                    }
+                    
                     return Ok(comments);
                 }
                 return NotFound();

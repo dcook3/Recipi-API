@@ -68,7 +68,7 @@ namespace Recipi_API.Controllers
         }
 
         [HttpPost("{postId}/comments")]
-        public async Task<ActionResult> PostComment(PostCommentData postComment)
+        public async Task<ActionResult> PostComment(int postId, string comment)
         {
             try
             {

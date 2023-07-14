@@ -1,14 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Recipi_API.Models;
-using Microsoft.EntityFrameworkCore;
 using Recipi_API.Services;
-using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Security.Claims;
-using System.Diagnostics.Eventing.Reader;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Recipi_API.Controllers
 {
@@ -72,15 +67,24 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                int numRows = await _interactionsService.PostComment(postComment.PostId, postComment.UserId, postComment.Comment);
-                if(numRows > 0)
+                int currentId;
+                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
-                    return Ok();
+                    int numRows = await _interactionsService.PostComment(postId, currentId, comment);
+                    if (numRows > 0)
+                    {
+                        return Ok();
+                    }
+                    else
+                    {
+                        return BadRequest();
+                    }
                 }
-                else 
+                else
                 {
-                    return BadRequest(); 
+                    return BadRequest("You must be logged in to post a comment.");
                 }
+                
             }
             catch (Exception ex)
             {
@@ -92,19 +96,28 @@ namespace Recipi_API.Controllers
             }
         }
         [HttpPost("{postId}/like")]
-        public async Task<ActionResult> PostLike(PostLikeData like)
+        public async Task<ActionResult> PostLike(int postId)
         {
             try
             {
-                int numRows = await _interactionsService.PostLike(like.PostId, like.UserId);
-                if (numRows > 0)
+                int currentId;
+                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
-                    return Ok();
+                    int numRows = await _interactionsService.PostLike(postId, currentId);
+                    if (numRows > 0)
+                    {
+                        return Ok();
+                    }
+                    else
+                    {
+                        return BadRequest();
+                    }
                 }
                 else
                 {
-                    return BadRequest();
+                    return BadRequest("You must be logged in to post a like.");
                 }
+                    
             }
             catch (Exception ex)
             {
@@ -116,18 +129,26 @@ namespace Recipi_API.Controllers
             }
         }
         [HttpPost("{postId}/report")]
-        public async Task<IActionResult> PostReport(PostReportData report)
+        public async Task<IActionResult> PostReport(int postId, string message)
         {
             try
             {
-                int numRows = await _interactionsService.PostReport(report.PostId, report.UserId, report.Message);
-                if (numRows > 0)
+                int currentId;
+                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
-                    return Ok();
+                    int numRows = await _interactionsService.PostReport(postId, currentId, message);
+                    if (numRows > 0)
+                    {
+                        return Ok();
+                    }
+                    else
+                    {
+                        return BadRequest();
+                    }
                 }
                 else
                 {
-                    return BadRequest();
+                    return BadRequest("You must be logged in to post a report.");
                 }
             }
             catch (Exception ex)

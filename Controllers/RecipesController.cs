@@ -6,6 +6,7 @@ using Recipi_API.Models.Data_Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using System.Data;
+using System.Security.Claims;
 
 namespace Recipi_API.Controllers
 {
@@ -15,11 +16,13 @@ namespace Recipi_API.Controllers
     {
         private readonly IRecipeService _recipeService;
         private readonly UserService _userService;
+        private readonly ClaimsIdentity? _claims;
 
-        public RecipesController(IRecipeService recipeService, UserService userService)
+        public RecipesController(IRecipeService recipeService, UserService userService, ClaimsIdentity claimsIdentity)
         {
             _recipeService = recipeService;
             _userService = userService;
+            _claims = claimsIdentity;
         }
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
@@ -32,16 +35,16 @@ namespace Recipi_API.Controllers
                 r.RecipeDescription = recipe.RecipeDescription;
                 r.RecipeTitle = recipe.RecipeTitle;
                 r.CreatedDatetime = DateTime.Now;
-
-                User? u = await _userService.GetUser(recipe.UserId);
-                if (u != null)
+                int currentId;
+                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
-                    r.UserId = u.UserId;
+                    r.UserId = currentId;
                 }
                 else
                 {
-                    return NotFound();
+                    return BadRequest("You must be logged in to post a recipe.");
                 }
+               
 
                 r.RecipeSteps = recipe.RecipeSteps;
 
@@ -115,15 +118,17 @@ namespace Recipi_API.Controllers
                     //Consider adding updated field to our data models. For now i will treat created fields as this.
                     r.CreatedDatetime = DateTime.Now;
                     r.RecipeSteps = recipeData.RecipeSteps;
-                    User? u = await _userService.GetUser(recipeData.UserId);
-                    if (u != null)
+
+                    int currentId;
+                    if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                     {
-                        r.User = u;
+                        r.UserId = currentId;
                     }
                     else
                     {
-                        return BadRequest("The recipe was not modified, please check submission.");
+                        return BadRequest("You must be logged in to post a recipe.");
                     }
+
                     int numRows = await _recipeService.UpdateRecipe(r);
                     if (numRows > 0)
                     {
@@ -272,7 +277,7 @@ namespace Recipi_API.Controllers
         }
 
         [HttpGet("{recipeId}/steps/{stepId}")]
-        public async Task<ActionResult> GetRecipeStepById(int recipeId, int stepId)
+        public async Task<ActionResult> GetRecipeStepById(int stepId)
         {
             try
             {

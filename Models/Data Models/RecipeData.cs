@@ -10,6 +10,8 @@ public partial class RecipeData
 
     public string? RecipeDescription { get; set; }
 
+    public int UserId { get; set; }
+
     public DateTime CreatedDatetime { get; set; }
 
     public List<RecipeStep> RecipeSteps { get; set; } = new List<RecipeStep>();

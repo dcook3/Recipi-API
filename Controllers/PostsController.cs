@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Recipi_API.Models;
 using Microsoft.EntityFrameworkCore;
 using Recipi_API.Services;
-using Microsoft.Extensions.Configuration.UserSecrets;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
 namespace Recipi_API.Controllers
 {
@@ -14,9 +16,11 @@ namespace Recipi_API.Controllers
     {
         private readonly IPostInteractionsService _interactionsService;
 
-        public PostsController(IPostInteractionsService service)
+        public PostsController(IPostInteractionsService service, IHttpContextAccessor _context, UserService userService)
         {
             _interactionsService = service;
+            _claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
+            _userService = userService;
         }
 
         [HttpGet("{postId}/comments")]

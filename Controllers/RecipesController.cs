@@ -15,6 +15,7 @@ namespace Recipi_API.Controllers
     public class RecipesController : ControllerBase
     {
         private readonly IRecipeService _recipeService;
+        private readonly UserService _userService;
         private readonly ClaimsIdentity? _claims;
 
         public RecipesController(IRecipeService recipeService, IHttpContextAccessor _context)

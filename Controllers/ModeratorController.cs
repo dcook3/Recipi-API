@@ -1,10 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Recipi_API.Models;
 using Recipi_API.Services;
+using System.Data;
 using System.Security.Claims;
 
 namespace Recipi_API.Controllers
 {
+
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
     public class ModeratorController : ControllerBase
     {
         private readonly IModeratorService moderatorService;
@@ -16,6 +21,7 @@ namespace Recipi_API.Controllers
             _claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
         }
 
+        [HttpGet("reports/post")]
         public async Task<ActionResult> GetPostReports()
         {
             try
@@ -35,6 +41,7 @@ namespace Recipi_API.Controllers
             
         }
 
+        [HttpGet("reports/bug")]
         public async Task<ActionResult> GetBugReports()
         {
             try 
@@ -53,6 +60,7 @@ namespace Recipi_API.Controllers
             }
         }
 
+        [HttpPost("reports/posts/{reportId}")]
         public async Task<ActionResult> PostReportedPostStatusChange(int reportId, string newStatus)
         {
             try

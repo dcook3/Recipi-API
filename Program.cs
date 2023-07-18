@@ -63,7 +63,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<UserService>();
-
+builder.Services.AddSingleton<IModeratorService, ModeratorService>();
 builder.Services.AddSingleton<IPostInteractionsService, PostInteractionsService>();
 builder.Services.AddSingleton<IRecipeService, RecipeService>();
 builder.Services.AddSingleton<IIngredientsService, IngredientsService>();

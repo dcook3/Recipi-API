@@ -28,11 +28,28 @@ namespace Recipi_API.Controllers
             {
                 List<PostReport> prs = await moderatorService.GetPostReports();
 
-                if (prs.Count >= 0)
-                {
-                    return Ok(prs);
-                }
-                return BadRequest("Please check that the post this user has reported exists.");
+                // Removing this because if there are no reports, there are just no reports and we should just return an empty array
+                //if (prs.Count >= 0)
+                //{
+                return Ok(prs);
+                //}
+                //return BadRequest("Please check that the post this user has reported exists.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+            
+        }
+        
+        [HttpGet("reports/post/{status}")]
+        public async Task<ActionResult> GetPostReports(string status)
+        {
+            try
+            {
+                List<PostReport> prs = await moderatorService.GetPostReports(status);
+
+                return Ok(prs);
             }
             catch (Exception ex)
             {
@@ -48,11 +65,22 @@ namespace Recipi_API.Controllers
             { 
                 List<BugReport> brs = await moderatorService.GetBugReports();
 
-                if (brs.Count >= 0)
-                {
-                    return Ok(brs);
-                }
-                return BadRequest("Please check that the post this user has reported exists.");
+                return Ok(brs);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet("reports/bug/{status}")]
+        public async Task<ActionResult> GetBugReports(string status)
+        {
+            try
+            {
+                List<BugReport> brs = await moderatorService.GetBugReports(status);
+
+                return Ok(brs);
             }
             catch (Exception ex)
             {

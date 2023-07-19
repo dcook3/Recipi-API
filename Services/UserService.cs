@@ -224,7 +224,20 @@ namespace Recipi_API.Services
 
         public async Task<Role?> GetRole(string roleName) => await db.Roles.Where(role => role.RoleName == roleName).FirstOrDefaultAsync();
 
+        public async Task<bool> CreateBugReport(int userId, string message)
+        {
+            db.BugReports.Add(new BugReport()
+            {
+                UserId = userId,
+                Message = message,
+                ReportedDatetime = DateTime.Now,
+                Status = "open"
+            });
 
+            var res = await db.SaveChangesAsync();
+
+            return res == 1;
+        }
 
 
         

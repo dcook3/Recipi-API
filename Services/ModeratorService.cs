@@ -16,6 +16,8 @@ namespace Recipi_API.Services
         }
 
         public async Task<List<BugReport>> GetBugReports() => await context.BugReports.OrderBy(br => br.ReportedDatetime).ToListAsync();
+        public async Task<List<BugReport>> GetBugReports(string status) => await context.BugReports.Where(br => br.Status == status).OrderBy(br => br.ReportedDatetime).ToListAsync();
         public async Task<List<PostReport>> GetPostReports() => await context.PostReports.OrderBy(pr => pr.ReportedDatetime).ToListAsync();
+        public async Task<List<PostReport>> GetPostReports(string status) => await context.PostReports.Where(pr => pr.Status == status).OrderBy(pr => pr.ReportedDatetime).ToListAsync();
     }
 }

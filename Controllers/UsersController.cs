@@ -217,7 +217,7 @@ namespace Recipi_API.Controllers
                 YourRelationships = combinedRels
             });
         }
-
+  
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPut()]
         public async Task<IActionResult> UpdateProfile(UserProfileUpdate updates)
@@ -626,6 +626,28 @@ namespace Recipi_API.Controllers
             }
         }
 
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        [HttpPost("/BugReport")]
+        public async Task<IActionResult> ReportBug(string message)
+        {
+            int userId;
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            {
+                return BadRequest();
+            }
+
+            if (message.IsNullOrEmpty())
+            {
+                return BadRequest("Message is required");
+            }
+
+            if(await userSvc.CreateBugReport(userId, message))
+            {
+                return Ok();
+            }
+
+            return StatusCode(500);
+        }
         
     }
 }

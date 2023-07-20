@@ -153,16 +153,10 @@ public partial class RecipiDbContext : DbContext
                 .HasColumnName("post_title");
             entity.Property(e => e.PostedDatetime).HasColumnName("posted_datetime");
             entity.Property(e => e.RecipeId).HasColumnName("recipe_id");
+            entity.Property(e => e.ThumbnailUrl)
+                .HasMaxLength(2043)
+                .HasColumnName("thumbnail_url");
             entity.Property(e => e.UserId).HasColumnName("user_id");
-
-            entity.HasOne(d => d.Recipe).WithMany(p => p.Posts)
-                .HasForeignKey(d => d.RecipeId)
-                .HasConstraintName("FK_Posts_Recipes");
-
-            entity.HasOne(d => d.User).WithMany(p => p.Posts)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Posts_Users");
         });
 
         modelBuilder.Entity<PostComment>(entity =>
@@ -181,13 +175,7 @@ public partial class RecipiDbContext : DbContext
 
             entity.HasOne(d => d.Post).WithMany(p => p.PostComments)
                 .HasForeignKey(d => d.PostId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PostComments_Posts");
-
-            entity.HasOne(d => d.User).WithMany(p => p.PostComments)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_PostComments_Users");
         });
 
         modelBuilder.Entity<PostLike>(entity =>
@@ -200,13 +188,7 @@ public partial class RecipiDbContext : DbContext
 
             entity.HasOne(d => d.Post).WithMany(p => p.PostLikes)
                 .HasForeignKey(d => d.PostId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PostLikes_Posts");
-
-            entity.HasOne(d => d.User).WithMany(p => p.PostLikes)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_PostLikes_Users");
         });
 
         modelBuilder.Entity<PostMedium>(entity =>
@@ -222,12 +204,7 @@ public partial class RecipiDbContext : DbContext
 
             entity.HasOne(d => d.Post).WithMany(p => p.PostMediaNavigation)
                 .HasForeignKey(d => d.PostId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PostMedia_Posts");
-
-            entity.HasOne(d => d.Step).WithMany(p => p.PostMedia)
-                .HasForeignKey(d => d.StepId)
-                .HasConstraintName("FK_PostMedia_RecipeSteps");
         });
 
         modelBuilder.Entity<PostReport>(entity =>
@@ -247,13 +224,7 @@ public partial class RecipiDbContext : DbContext
 
             entity.HasOne(d => d.Post).WithMany(p => p.PostReports)
                 .HasForeignKey(d => d.PostId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PostReports_Posts");
-
-            entity.HasOne(d => d.User).WithMany(p => p.PostReports)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_PostReports_Users");
         });
 
         modelBuilder.Entity<Recipe>(entity =>
@@ -288,7 +259,6 @@ public partial class RecipiDbContext : DbContext
 
             entity.HasOne(d => d.Recipe).WithMany(p => p.RecipeCookbooks)
                 .HasForeignKey(d => d.RecipeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_RecipeCookbook_Recipes");
 
             entity.HasOne(d => d.User).WithMany(p => p.RecipeCookbooks)
@@ -310,7 +280,6 @@ public partial class RecipiDbContext : DbContext
 
             entity.HasOne(d => d.Recipe).WithMany(p => p.RecipeSteps)
                 .HasForeignKey(d => d.RecipeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_RecipeSteps_Recipes");
         });
 
@@ -337,12 +306,10 @@ public partial class RecipiDbContext : DbContext
 
             entity.HasOne(d => d.Ingredient).WithMany(p => p.StepIngredients)
                 .HasForeignKey(d => d.IngredientId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_StepIngredients_Ingredients");
 
             entity.HasOne(d => d.Step).WithMany(p => p.StepIngredients)
                 .HasForeignKey(d => d.StepId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_StepIngredients_RecipeSteps");
         });
 
@@ -409,12 +376,10 @@ public partial class RecipiDbContext : DbContext
 
             entity.HasOne(d => d.Role).WithMany(p => p.UserRoles)
                 .HasForeignKey(d => d.RoleId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserRoles_Roles");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserRoles)
                 .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserRoles_Users");
         });
 

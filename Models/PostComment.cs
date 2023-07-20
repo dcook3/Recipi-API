@@ -16,6 +16,4 @@ public partial class PostComment
     public DateTime CommentDatetime { get; set; }
 
     public virtual Post Post { get; set; } = null!;
-
-    public virtual User User { get; set; } = null!;
 }

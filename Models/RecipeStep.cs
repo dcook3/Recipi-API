@@ -13,8 +13,6 @@ public partial class RecipeStep
 
     public short StepOrder { get; set; }
 
-    public virtual ICollection<PostMedium> PostMedia { get; set; } = new List<PostMedium>();
-
     public virtual Recipe Recipe { get; set; } = null!;
 
     public virtual ICollection<StepIngredient> StepIngredients { get; set; } = new List<StepIngredient>();

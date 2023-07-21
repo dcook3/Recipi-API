@@ -24,7 +24,7 @@ namespace Recipi_API.Services
         public async Task<List<PostPreview>> GetRecommendedPosts()
         {
             List<PostPreview> postPreviews = new();
-            List<Post> posts = new(); //Make this into a list sorted by postlikes on db
+            List<Post> posts = await context.Posts.OrderBy(p => p.PostLikes.Count()).ToListAsync();
             foreach (Post p in posts)
             {
                 PostPreview postPreview = new PostPreview();

@@ -20,8 +20,8 @@ namespace Recipi_API.Services
             PostComment pc = new PostComment();
             pc.Comment = comment;
             pc.CommentDatetime = DateTime.Now;
-            pc.Post = context.Posts.FirstOrDefault(p => p.PostId == postId);
-            pc.User = context.Users.FirstOrDefault(u => u.UserId == userId);
+            pc.PostId = postId;
+            pc.UserId = userId;
             context.PostComments.Add(pc);
             return await context.SaveChangesAsync();
         }
@@ -29,8 +29,8 @@ namespace Recipi_API.Services
         public async Task<int> PostLike(int postId, int userId)
         {
             PostLike pl = new PostLike();
-            pl.Post = context.Posts.FirstOrDefault(p => p.PostId == postId);
-            pl.User = context.Users.FirstOrDefault(u => u.UserId == userId);
+            pl.PostId = postId;
+            pl.UserId = userId;
             context.PostLikes.Add(pl);
             return await context.SaveChangesAsync();
         }
@@ -38,8 +38,8 @@ namespace Recipi_API.Services
         public async Task<int> PostReport(int postId, int userId, string message)
         {
             PostReport r = new PostReport();
-            r.Post = context.Posts.FirstOrDefault(p => p.PostId==postId);
-            r.User = context.Users.FirstOrDefault(u =>u.UserId == userId);
+            r.PostId = postId;
+            r.UserId = userId;
             r.Message = message;
             r.ReportedDatetime = DateTime.Now;
             context.PostReports.Add(r);

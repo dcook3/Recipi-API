@@ -6,6 +6,6 @@ namespace Recipi_API.Services
     {
         public Task<List<StepIngredient>> GetIngredientsForRecipe(int recipeId);
         public Task<int> CreateIngredient(Ingredient ingredient);
-        public Task<Ingredient>? GetIngredientById(int ingId);
+        public Task<Ingredient?> GetIngredientById(int ingId);
     }
 }

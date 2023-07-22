@@ -19,7 +19,7 @@ namespace Recipi_API.Services
             return await context.StepIngredients.Where(si => si.Step.RecipeId == recipeId).ToListAsync();
         }
 
-        public async Task<Ingredient>? GetIngredientById(int ingId)
+        public async Task<Ingredient?> GetIngredientById(int ingId)
         {
             return await context.Ingredients.FindAsync(ingId);
         }

@@ -15,9 +15,10 @@ namespace Recipi_API.Controllers
     public class IngredientsController : ControllerBase
     {
         private readonly IIngredientsService _ingredientsService;
-
-        public IngredientsController(IIngredientsService service)
+        private readonly ClaimsIdentity? _claims;
+        public IngredientsController(IIngredientsService service, IHttpContextAccessor _context)
         {
+            this._claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
             _ingredientsService = service;
         }
         //GetIngredientsForRecipe
@@ -66,24 +67,17 @@ namespace Recipi_API.Controllers
         {
             try
              {
-              Ingredient i = new()
-              {
-                  IngredientTitle = ingData.IngredientTitle,
-                  CreatedByUserId = ingData.CreatedByUserId
-              };
-              if (ingData.IngredientDescription != null)
-              {
-                  i.IngredientDescription = ingData.IngredientDescription;
-              }
-              if(ingData.IngredientIcon != null)
-            {
-                Ingredient i = new();
-                i.IngredientTitle = ingData.IngredientTitle;
-                i.CreatedByUserId = ingData.CreatedByUserId;
+                Ingredient i = new()
+                {
+                    IngredientTitle = ingData.IngredientTitle,
+                    CreatedByUserId = ingData.CreatedByUserId
+                };
+
                 if (ingData.IngredientDescription != null)
                 {
                     i.IngredientDescription = ingData.IngredientDescription;
                 }
+
                 if (ingData.IngredientIcon != null)
                 {
                     i.IngredientIcon = ingData.IngredientIcon;

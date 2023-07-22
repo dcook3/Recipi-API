@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Recipi_API.Models;
 using Recipi_API.Services;
 using System.Data;
@@ -13,9 +14,11 @@ namespace Recipi_API.Controllers
     public class ModeratorController : ControllerBase
     {
         private readonly IModeratorService moderatorService;
+        private readonly ClaimsIdentity? _claims;
 
-        public ModeratorController(IModeratorService service)
+        public ModeratorController(IModeratorService service, IHttpContextAccessor _context)
         {
+            this._claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
             moderatorService = service;
         }
 

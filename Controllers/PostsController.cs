@@ -190,31 +190,21 @@ namespace Recipi_API.Controllers
             try
             {
                 List<PostComment> comments = await _interactionsService.GetComments(postId);
-                int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
+
                     foreach (PostComment comment in comments)
                     {
-                      if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
-                      {
-                          BlockStatus blockStatus = await _userService.CheckBlock(currentId, comment.UserId);
-                          if (blockStatus == BlockStatus.Blocked)
-                          {
-                              comments.Remove(comment);
-                          }
-                      }
-                      else
-                      {
-                          return BadRequest("Must be logged in to see comments.");
-                      }
+                        BlockStatus blockStatus = await _userService.CheckBlock(currentId, comment.UserId);
+                        if (blockStatus == BlockStatus.Blocked)
+                        {
+                            comments.Remove(comment);
+                        }
+                        
                     }
-                    return Ok(comments);
                 }
-                else
-                {
-                    return BadRequest("Must be logged in to see comments.");
-                }
-                    
+
                 return Ok(comments);
             }
             catch (Exception ex)

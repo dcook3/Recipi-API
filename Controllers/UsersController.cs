@@ -33,44 +33,23 @@ namespace Recipi_API.Controllers
         {
             try
             {
-
-                return BadRequest("Username and Password are Required");
-            }
-
-            User? user = await userSvc.AuthenticateLogin(login);
-
-            if (user == null)
-            {
-                return Unauthorized();
-            }
-
-            if (user.UserRoles.Count != 1)
-            {
-                return StatusCode(500);
-            }
+                if (string.IsNullOrEmpty(login.Credential) || string.IsNullOrEmpty(login.Password))
+                {
+                    return BadRequest("Username and Password are Required");
+                }
 
                 User? user = await userSvc.AuthenticateLogin(login);
 
+                if (user == null)
+                {
+                    return Unauthorized();
+                }
 
-#pragma warning disable CS8604 // Possible null reference argument.
-            var token = new JwtSecurityToken
-            (
-                issuer: this.configuration["Jwt:Issuer"],
-                audience: this.configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddDays(60),
-                notBefore: DateTime.UtcNow,
-                signingCredentials: new SigningCredentials(
-                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
-                        SecurityAlgorithms.HmacSha256)
-            );
-#pragma warning restore CS8604 // Possible null reference argument.
-
-
-                if (user.UserRoles.Count() != 1)
+                if (user.UserRoles.Count != 1)
                 {
                     return StatusCode(500);
                 }
+
 
                 var claims = new[]
                 {
@@ -80,6 +59,7 @@ namespace Recipi_API.Controllers
                     new Claim(ClaimTypes.Role, user.UserRoles.Last().Role.RoleName)
                 };
 
+                #pragma warning disable CS8604 // Possible null reference argument.
                 var token = new JwtSecurityToken
                 (
                     issuer: this.configuration["Jwt:Issuer"],
@@ -91,6 +71,7 @@ namespace Recipi_API.Controllers
                             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
                             SecurityAlgorithms.HmacSha256)
                 );
+                #pragma warning restore CS8604 // Possible null reference argument.
 
                 string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
@@ -195,31 +176,27 @@ namespace Recipi_API.Controllers
             try
             {
               if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+                { 
+                    return BadRequest();
+                }
 
-              {
-                  int userId;
-                  if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
-                  {
-                      return BadRequest();
-                  }
+                var user = await userSvc.GetUser(userId);
 
-                  var user = await userSvc.GetUser(userId);
-
-                  if (user == null)
-                  {
-                      return StatusCode(500);
-                  }
-
-                 return Ok(new
+                if (user == null)
                 {
-                    user.UserId,
-                    user.Username,
-                    user.Email,
-                    user.ProfilePicture,
-                    user.Biography,
-                    user.RegisteredDatetime,
-                    user.Verified
-                });
+                    return StatusCode(500);
+                }
+
+                return Ok(new
+            {
+                user.UserId,
+                user.Username,
+                user.Email,
+                user.ProfilePicture,
+                user.Biography,
+                user.RegisteredDatetime,
+                user.Verified
+            });
             }
             catch (Exception ex)
             {
@@ -246,9 +223,6 @@ namespace Recipi_API.Controllers
             {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
             {
-                int selfUserId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out selfUserId))
-                {
                     return BadRequest();
                 }
 
@@ -304,16 +278,13 @@ namespace Recipi_API.Controllers
                 }
             }
         }
-        
+
         [HttpGet("id/{userId}")]
         public async Task<IActionResult> GetUserByUserId(int userId)
         {
             try
             {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
-            {
-                int selfUserId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out selfUserId))
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
                 {
                     return BadRequest();
                 }
@@ -367,7 +338,7 @@ namespace Recipi_API.Controllers
                     return StatusCode(500, "Internal server error. Please try again later.");
                 }
             }
-
+        }
 
 
         
@@ -417,9 +388,6 @@ namespace Recipi_API.Controllers
             {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
-                int userId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
-                {
                     return BadRequest();
                 }
 
@@ -456,18 +424,10 @@ namespace Recipi_API.Controllers
         {
             try
             {
-              if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
-              {
-                  return BadRequest();
-              }
-
-            if (!await userSvc.CheckUser(recievingUserId))
-            {
-                int userId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
-                {
-                    return BadRequest();
-                }
+                  if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+                  {
+                      return BadRequest();
+                  }
 
                 if (!await userSvc.CheckUser(recievingUserId))
                 {
@@ -475,9 +435,9 @@ namespace Recipi_API.Controllers
                 }
 
                 var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
-                if((int) blockStatus > 0)
+                if ((int)blockStatus > 0)
                 {
-                    if((int) blockStatus == 2)
+                    if ((int)blockStatus == 2)
                     {
                         return Unauthorized("User has been blocked");
                     }
@@ -490,12 +450,12 @@ namespace Recipi_API.Controllers
                 var rels = await userSvc.GetRelationships(userId, recievingUserId);
                 var friendRequest = rels.Where(rels => rels.Relationship == "friendRequest").FirstOrDefault();
 
-                if(friendRequest != null)
+                if (friendRequest != null)
                 {
                     return Conflict("A Friend Request has already been sent");
                 }
 
-                if(await userSvc.RequestFriend(userId, recievingUserId))
+                if (await userSvc.RequestFriend(userId, recievingUserId))
                 {
                     return Ok();
                 }
@@ -503,6 +463,7 @@ namespace Recipi_API.Controllers
                 {
                     return StatusCode(500);
                 }
+                
             }
             catch (Exception ex)
             {
@@ -528,9 +489,6 @@ namespace Recipi_API.Controllers
             {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
-                int userId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
-                {
                     return BadRequest();
                 }
 
@@ -592,11 +550,7 @@ namespace Recipi_API.Controllers
             try
             {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
-
             {
-                int userId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
-                {
                     return BadRequest();
                 }
 
@@ -657,15 +611,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
-            {
-                return BadRequest();
-            }
-
-            if (!await userSvc.CheckUser(recievingUserId))
-            {
-                int userId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
                 {
                     return BadRequest();
                 }
@@ -729,15 +675,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
-            {
-                return BadRequest();
-            }
-
-            if (!await userSvc.CheckUser(recievingUserId))
-            {
-                int userId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
                 {
                     return BadRequest();
                 }
@@ -809,9 +747,6 @@ namespace Recipi_API.Controllers
             {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
-                int userId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
-                {
                     return BadRequest();
                 }
 
@@ -851,9 +786,6 @@ namespace Recipi_API.Controllers
             {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
-                int userId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
-                {
                     return BadRequest();
                 }
 
@@ -892,10 +824,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
-            {
-                int userId;
-                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
                 {
                     return BadRequest();
                 }
@@ -921,12 +850,13 @@ namespace Recipi_API.Controllers
                       return StatusCode(500);
                   }
                 }
-                if(await userSvc.blockUser(userId, recievingUserId)){
-                  return Ok()
+                if(await userSvc.BlockUser(userId, recievingUserId))
+                {
+                    return Ok();
                 }
                 else
                 {
-                  return StatusCode(500, "Internal server error. Please try again later.")
+                    return StatusCode(500, "Internal server error. Please try again later.");
                 }
              }
             catch (Exception ex)

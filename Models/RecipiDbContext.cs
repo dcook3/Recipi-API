@@ -27,7 +27,7 @@ public partial class RecipiDbContext : DbContext
 
     public virtual DbSet<PostComment> PostComments { get; set; }
 
-    public virtual DbSet<PostLike> PostLikes { get; set; }
+    public virtual DbSet<PostInteraction> PostInteractions { get; set; }
 
     public virtual DbSet<PostMedium> PostMedia { get; set; }
 
@@ -57,7 +57,7 @@ public partial class RecipiDbContext : DbContext
     {
         modelBuilder.Entity<BugReport>(entity =>
         {
-            entity.ToTable("BugReport", b=> b.IsTemporal());
+            entity.ToTable("BugReport");
 
             entity.Property(e => e.BugReportId).HasColumnName("bug_report_id");
             entity.Property(e => e.Message)
@@ -176,19 +176,35 @@ public partial class RecipiDbContext : DbContext
             entity.HasOne(d => d.Post).WithMany(p => p.PostComments)
                 .HasForeignKey(d => d.PostId)
                 .HasConstraintName("FK_PostComments_Posts");
+
+            entity.HasOne(d => d.User).WithMany(p => p.PostComments)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PostComments_Users");
         });
 
-        modelBuilder.Entity<PostLike>(entity =>
+        modelBuilder.Entity<PostInteraction>(entity =>
         {
-            entity.HasKey(e => e.LikeId);
+            entity.HasKey(e => e.InteractionId).HasName("PK_PostLikes");
 
-            entity.Property(e => e.LikeId).HasColumnName("like_id");
+            entity.ToTable("PostInteraction");
+
+            entity.Property(e => e.InteractionId).HasColumnName("interaction_id");
+            entity.Property(e => e.InteractionDatetime).HasColumnName("interaction_datetime");
+            entity.Property(e => e.Liked)
+                .HasDefaultValueSql("((0))")
+                .HasColumnName("liked");
             entity.Property(e => e.PostId).HasColumnName("post_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.Post).WithMany(p => p.PostLikes)
+            entity.HasOne(d => d.Post).WithMany(p => p.PostInteractions)
                 .HasForeignKey(d => d.PostId)
                 .HasConstraintName("FK_PostLikes_Posts");
+
+            entity.HasOne(d => d.User).WithMany(p => p.PostInteractions)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PostInteraction_Users");
         });
 
         modelBuilder.Entity<PostMedium>(entity =>
@@ -205,6 +221,10 @@ public partial class RecipiDbContext : DbContext
             entity.HasOne(d => d.Post).WithMany(p => p.PostMediaNavigation)
                 .HasForeignKey(d => d.PostId)
                 .HasConstraintName("FK_PostMedia_Posts");
+
+            entity.HasOne(d => d.Step).WithMany(p => p.PostMedia)
+                .HasForeignKey(d => d.StepId)
+                .HasConstraintName("FK_PostMedia_RecipeSteps");
         });
 
         modelBuilder.Entity<PostReport>(entity =>
@@ -225,6 +245,11 @@ public partial class RecipiDbContext : DbContext
             entity.HasOne(d => d.Post).WithMany(p => p.PostReports)
                 .HasForeignKey(d => d.PostId)
                 .HasConstraintName("FK_PostReports_Posts");
+
+            entity.HasOne(d => d.User).WithMany(p => p.PostReports)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PostReports_Users");
         });
 
         modelBuilder.Entity<Recipe>(entity =>

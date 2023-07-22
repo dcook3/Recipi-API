@@ -34,11 +34,16 @@ namespace Recipi_API.Services
             return postPreviews;
         }
 
-        public async Task<List<PostPreview>> GetRecommendedPosts(int num)
+        public async Task<List<PostPreview>> GetRecommendedPosts(int userId)
         {
             List<PostPreview> postPreviews = new();
-            //increment httpcontext? variable
-            List<Post> posts = await context.Posts.OrderByDescending(p => p.PostedDatetime).Take(num + 10).ToListAsync();
+            //increment httpcontext? variable    <- not sure what you mean by this - lj
+            //https://stackoverflow.com/questions/7927329/sql-ordering-records-by-weight could do something like this with dates today bucket, this week bucket, this month bucket
+            List<Post> posts = await context.Posts.Where(p => p.PostInteractions.Select(pi => pi.UserId == userId).Count() == 0)
+                                                  .OrderByDescending(p => p.PostInteractions.GroupBy(pi => pi.PostId)
+                                                                                  .Select(pi => pi.Where(pi => pi.Liked == true).Count()))
+                                                  .ToListAsync();
+
             foreach (Post p in posts)
             {
                 PostPreview postPreview = new();

@@ -26,12 +26,49 @@ namespace Recipi_API.Services
             return await context.SaveChangesAsync();
         }
 
+        public async Task<PostInteraction?> CreatePostInteraction(int postId, int userId)
+        {
+            PostInteraction pi = new PostInteraction()
+            {
+                PostId = postId,
+                UserId = userId,
+                Liked = false,
+                InteractionDatetime = DateTime.Now
+            };
+            context.Add(pi);
+            
+            if(await context.SaveChangesAsync() == 1)
+            {
+                return pi;
+            }
+            else
+            {
+                return null;
+            }
+        }
         public async Task<int> PostLike(int postId, int userId)
         {
-            PostLike pl = new PostLike();
-            pl.PostId = postId;
-            pl.UserId = userId;
-            context.PostLikes.Add(pl);
+
+            var pi = await context.PostInteractions.Where(pi => pi.PostId == postId && pi.UserId == userId).FirstOrDefaultAsync();
+            
+            if(pi == null)
+            {
+                if(await context.Posts.AnyAsync(pi => pi.PostId == postId)) 
+                { 
+                    pi = await this.CreatePostInteraction(postId, userId);
+                    if(pi == null)
+                    {
+                        return 0;
+                    }
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+
+            pi.Liked = true;
+            pi.InteractionDatetime = DateTime.Now;
             return await context.SaveChangesAsync();
         }
 

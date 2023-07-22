@@ -14,4 +14,6 @@ public partial class PostMedium
     public string MediaUrl { get; set; } = null!;
 
     public virtual Post Post { get; set; } = null!;
+
+    public virtual RecipeStep? Step { get; set; }
 }

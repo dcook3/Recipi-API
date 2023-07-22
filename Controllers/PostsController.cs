@@ -31,7 +31,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                List<PostPreview> posts = await _fetchService.GetRecommendedPosts();
+                List<PostPreview> posts = await _fetchService.GetRecommendedPosts(1);
                 if (posts.Count > 0)
                 {
                     return Ok(posts);
@@ -115,9 +115,17 @@ namespace Recipi_API.Controllers
         {
             try
             {
+                
                 Post post = await _fetchService.GetSinglePost(postId);
                 if (post != null)
                 {
+                    int currentId;
+                    if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                    {
+                        //only create post interaction if user is logged in
+                        await _interactionsService.CreatePostInteraction(postId, currentId);
+                    }
+                    
                     return Ok(post);
                 }
                 else

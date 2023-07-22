@@ -31,6 +31,12 @@ public partial class User
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
+    public virtual ICollection<PostComment> PostComments { get; set; } = new List<PostComment>();
+
+    public virtual ICollection<PostInteraction> PostInteractions { get; set; } = new List<PostInteraction>();
+
+    public virtual ICollection<PostReport> PostReports { get; set; } = new List<PostReport>();
+
     public virtual ICollection<RecipeCookbook> RecipeCookbooks { get; set; } = new List<RecipeCookbook>();
 
     public virtual ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();

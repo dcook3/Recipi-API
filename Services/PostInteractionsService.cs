@@ -20,26 +20,63 @@ namespace Recipi_API.Services
             PostComment pc = new PostComment();
             pc.Comment = comment;
             pc.CommentDatetime = DateTime.Now;
-            pc.Post = context.Posts.FirstOrDefault(p => p.PostId == postId);
-            pc.User = context.Users.FirstOrDefault(u => u.UserId == userId);
+            pc.PostId = postId;
+            pc.UserId = userId;
             context.PostComments.Add(pc);
             return await context.SaveChangesAsync();
         }
 
+        public async Task<PostInteraction?> CreatePostInteraction(int postId, int userId)
+        {
+            PostInteraction pi = new PostInteraction()
+            {
+                PostId = postId,
+                UserId = userId,
+                Liked = false,
+                InteractionDatetime = DateTime.Now
+            };
+            context.Add(pi);
+            
+            if(await context.SaveChangesAsync() == 1)
+            {
+                return pi;
+            }
+            else
+            {
+                return null;
+            }
+        }
         public async Task<int> PostLike(int postId, int userId)
         {
-            PostLike pl = new PostLike();
-            pl.Post = context.Posts.FirstOrDefault(p => p.PostId == postId);
-            pl.User = context.Users.FirstOrDefault(u => u.UserId == userId);
-            context.PostLikes.Add(pl);
+
+            var pi = await context.PostInteractions.Where(pi => pi.PostId == postId && pi.UserId == userId).FirstOrDefaultAsync();
+            
+            if(pi == null)
+            {
+                if(await context.Posts.AnyAsync(pi => pi.PostId == postId)) 
+                { 
+                    pi = await this.CreatePostInteraction(postId, userId);
+                    if(pi == null)
+                    {
+                        return 0;
+                    }
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+
+            pi.Liked = !pi.Liked;
+            pi.InteractionDatetime = DateTime.Now;
             return await context.SaveChangesAsync();
         }
 
         public async Task<int> PostReport(int postId, int userId, string message)
         {
             PostReport r = new PostReport();
-            r.Post = context.Posts.FirstOrDefault(p => p.PostId==postId);
-            r.User = context.Users.FirstOrDefault(u =>u.UserId == userId);
+            r.PostId = postId;
+            r.UserId = userId;
             r.Message = message;
             r.ReportedDatetime = DateTime.Now;
             context.PostReports.Add(r);

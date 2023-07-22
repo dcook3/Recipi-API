@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using System.Data;
 using System.Security.Claims;
+using Microsoft.Identity.Client;
 
 namespace Recipi_API.Controllers
 {
@@ -236,26 +237,25 @@ namespace Recipi_API.Controllers
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost("{recipeId}/steps")]
-        public async Task<ActionResult> PostRecipeStep(RecipeStepData step)
+        public async Task<ActionResult> PostRecipeStep(RecipeStepData stepData)
         {
             try
             {
                 RecipeStep rs = new();
-                rs.RecipeId = step.RecipeId;
-                rs.StepOrder = step.StepOrder;
-                rs.StepDescription = step.StepDescription;
-                if(step.StepIngredients.Count > 0)
+                rs.RecipeId = stepData.RecipeId;
+                rs.StepOrder = stepData.StepOrder;
+                rs.StepDescription = stepData.StepDescription;
+                if(stepData.StepIngredients.Count > 0)
                 {
-                    foreach(Ingredient i in step.StepIngredients)
+                    foreach(Ingredient i in stepData.StepIngredients)
                     {
                         StepIngredient si = new StepIngredient();
-                        si.IngredientMeasurementValue = step.ingredientMeasuremnetValue;
-                        si.IngredientMeasurementUnit = step.ingredientMeasurementLabel;
+                        si.IngredientMeasurementValue = stepData.ingredientMeasurementValue;
+                        si.IngredientMeasurementUnit = stepData.ingredientMeasurementLabel;
                         si.IngredientId = i.IngredientId;
                         await _recipeService.CreateRecipeStepIngredient(si);
                     }
                 }
-                rs.PostMedia = step.PostMedia;
                 if (await _recipeService.CreateRecipeStep(rs) > 0)
                 {
                     return Ok();
@@ -310,7 +310,7 @@ namespace Recipi_API.Controllers
                     foreach (Ingredient i in recipeStepData.StepIngredients)
                     {
                         StepIngredient si = new StepIngredient();
-                        si.IngredientMeasurementValue = recipeStepData.ingredientMeasuremnetValue;
+                        si.IngredientMeasurementValue = recipeStepData.ingredientMeasurementValue;
                         si.IngredientMeasurementUnit = recipeStepData.ingredientMeasurementLabel;
                         si.IngredientId = i.IngredientId;
                         await _recipeService.PutRecipeStepIngredient(si);

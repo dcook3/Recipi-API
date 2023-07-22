@@ -16,9 +16,9 @@ namespace Recipi_API.Controllers
         private readonly IPostInteractionsService _interactionsService;
         private readonly IPostFetchService _fetchService;
         private readonly ClaimsIdentity? _claims;
-        private readonly UserService _userService;
+        private readonly IUserService _userService;
 
-        public PostsController(IPostInteractionsService service, IPostFetchService fetchService, IHttpContextAccessor _context, UserService userService)
+        public PostsController(IPostInteractionsService service, IPostFetchService fetchService, IHttpContextAccessor _context, IUserService userService)
         {
             _interactionsService = service;
             _fetchService = fetchService;
@@ -26,6 +26,7 @@ namespace Recipi_API.Controllers
             _userService = userService;
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetRecommendedPosts()
         {
@@ -33,8 +34,7 @@ namespace Recipi_API.Controllers
             try
             {
                 List<PostPreview> posts;
-                int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
                     posts = await _fetchService.GetRecommendedPosts(currentId);
 
@@ -68,8 +68,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
                     List<PostPreview> posts = await _fetchService.GetFollowingPosts(currentId);
                     if (posts != null && posts.Count > 0)
@@ -85,7 +84,7 @@ namespace Recipi_API.Controllers
                 {
                     return BadRequest("You must be logged in to view following");
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -97,6 +96,8 @@ namespace Recipi_API.Controllers
             }
         }
 
+
+        [AllowAnonymous]
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetUserPosts(int userId)
         {
@@ -122,22 +123,22 @@ namespace Recipi_API.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("{postId}")]
         public async Task<IActionResult> GetSinglePost(int postId)
         {
             try
             {
                 
-                Post post = await _fetchService.GetSinglePost(postId);
+                Post? post = await _fetchService.GetSinglePost(postId);
                 if (post != null)
                 {
-                    int currentId;
-                    if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                    if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                     {
                         //only create post interaction if user is logged in
                         await _interactionsService.CreatePostInteraction(postId, currentId);
                     }
-                    
+
                     return Ok(post);
                 }
                 else
@@ -155,6 +156,8 @@ namespace Recipi_API.Controllers
             }
         }
 
+
+        [AllowAnonymous]
         [HttpGet("{postId}/comments")]
         public async Task<ActionResult> GetComments(int postId)
         {
@@ -163,8 +166,7 @@ namespace Recipi_API.Controllers
                 List<PostComment> comments = await _interactionsService.GetComments(postId);
                 if(comments.Count > 0)
                 {
-                    int currentId;
-                    if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                    if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                     {
                         foreach (PostComment comment in comments)
                         {
@@ -179,7 +181,7 @@ namespace Recipi_API.Controllers
                     {
                         return BadRequest("Must be logged in to see comments.");
                     }
-                    
+
                     return Ok(comments);
                 }
                 return NotFound();
@@ -193,15 +195,13 @@ namespace Recipi_API.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+  
         [HttpPost("{postId}/comments")]
         public async Task<ActionResult> PostComment(int postId, string comment)
         {
             try
             {
-                int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
                     int numRows = await _interactionsService.PostComment(postId, currentId, comment);
                     if (numRows > 0)
@@ -217,7 +217,7 @@ namespace Recipi_API.Controllers
                 {
                     return BadRequest("You must be logged in to post a comment.");
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -229,14 +229,12 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost("{postId}/like")]
         public async Task<ActionResult> PostLike(int postId)
         {
             try
             {
-                int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
                     int numRows = await _interactionsService.PostLike(postId, currentId);
                     if (numRows > 0)
@@ -252,7 +250,7 @@ namespace Recipi_API.Controllers
                 {
                     return BadRequest("You must be logged in to like a post.");
                 }
-                    
+
             }
             catch (Exception ex)
             {
@@ -263,15 +261,13 @@ namespace Recipi_API.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+  
         [HttpPost("{postId}/report")]
         public async Task<IActionResult> PostReport(int postId, string message)
         {
             try
             {
-                int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
                     int numRows = await _interactionsService.PostReport(postId, currentId, message);
                     if (numRows > 0)

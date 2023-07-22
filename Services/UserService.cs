@@ -4,27 +4,28 @@ using Recipi_API.Models;
 
 namespace Recipi_API.Services
 {
-    public class UserService
+    public class UserService : IUserService
     {
-        private static RecipiDbContext db = new RecipiDbContext();
+        private readonly static RecipiDbContext db = new();
 
 
         public async Task<User?> GetUser(int id) => await db.Users.Where(user => user.UserId == id).FirstOrDefaultAsync();
-        public async Task<User?> GetUser(int id, int selfUserId) => 
+        public async Task<User?> GetUser(int id, int selfUserId) =>
             await db.Users.Where(user => user.UserId == id)
                           .Include(user => user.UserRelationshipInitiatingUsers.Where(rel => rel.InitiatingUserId == selfUserId))
                           .Include(user => user.UserRelationshipReceivingUsers.Where(rel => rel.ReceivingUserId == selfUserId))
                     .FirstOrDefaultAsync();
         public async Task<User?> GetUser(string username) => await db.Users.Where(user => user.Username == username).FirstOrDefaultAsync();
-        public async Task<User?> GetUser(string username, int selfUserId) => 
+        public async Task<User?> GetUser(string username, int selfUserId) =>
             await db.Users.Where(user => user.Username == username)
-                          .Include(user=> user.UserRelationshipInitiatingUsers.Where(rel => rel.InitiatingUserId == selfUserId))
-                          .Include(user=> user.UserRelationshipReceivingUsers.Where(rel => rel.ReceivingUserId == selfUserId))
+                          .Include(user => user.UserRelationshipInitiatingUsers.Where(rel => rel.InitiatingUserId == selfUserId))
+                          .Include(user => user.UserRelationshipReceivingUsers.Where(rel => rel.ReceivingUserId == selfUserId))
                     .FirstOrDefaultAsync();
 
-        public async Task<bool> CreateUser(UserRegistration registration) {
+        public async Task<bool> CreateUser(UserRegistration registration)
+        {
 
-            User user = new User()
+            User user = new()
             {
                 Username = registration.Username,
                 Email = registration.Email,
@@ -37,7 +38,7 @@ namespace Recipi_API.Services
 
             db.Users.Add(user);
 
-            UserRole role = new UserRole()
+            UserRole role = new()
             {
                 User = user,
                 RoleId = 1,
@@ -54,8 +55,8 @@ namespace Recipi_API.Services
 
         public async Task<User?> AuthenticateLogin(UserLogin login)
         {
-            return await db.Users.Where(user => 
-                                       (user.Username == login.Credential || user.Email == login.Credential) && 
+            return await db.Users.Where(user =>
+                                       (user.Username == login.Credential || user.Email == login.Credential) &&
                                         user.Password == login.Password)
                                        .Include(user => user.UserRoles)
                                        .ThenInclude(userRole => userRole.Role)
@@ -74,11 +75,12 @@ namespace Recipi_API.Services
 
         public async Task<bool> RequestFriend(int initiatingUserId, int recievingUserId)
         {
-            db.UserRelationships.Add(new UserRelationship() { 
+            db.UserRelationships.Add(new UserRelationship()
+            {
                 InitiatingUserId = initiatingUserId,
                 ReceivingUserId = recievingUserId,
                 Relationship = "friendRequest",
-                InitiatedDatetime= DateTime.Now
+                InitiatedDatetime = DateTime.Now
             });
             var res = await db.SaveChangesAsync();
             return res == 1;
@@ -100,7 +102,7 @@ namespace Recipi_API.Services
             var userFriending = await db.UserRelationships.Where(rel => rel.ReceivingUserId == userId && rel.Relationship == "friend")
                                                       .Select(rel => rel.InitiatingUser)
                                                       .ToListAsync();
-            
+
             return friendingUser.Concat(userFriending).ToList();
         }
 
@@ -108,7 +110,7 @@ namespace Recipi_API.Services
             await db.UserRelationships.Where(rel => rel.ReceivingUserId == userId && rel.Relationship == "friendRequest")
                                                       .Select(rel => rel.ReceivingUser)
                                                       .ToListAsync();
-        
+
         public async Task<bool> FollowUser(int initiatingUserId, int recievingUserId)
         {
             db.UserRelationships.Add(new UserRelationship()
@@ -121,7 +123,7 @@ namespace Recipi_API.Services
             var res = await db.SaveChangesAsync();
             return res == 1;
         }
-    
+
         public async Task<List<User>> GetFollowing(int userId) =>
             await db.UserRelationships.Where(rel => rel.InitiatingUserId == userId && rel.Relationship == "follow")
                                       .Select(rel => rel.ReceivingUser)
@@ -139,12 +141,12 @@ namespace Recipi_API.Services
                                                     .ToListAsync();
 
             // neither user is blocking
-            if(blocks.Count() == 0)
+            if (blocks.Count == 0)
             {
                 return BlockStatus.None;
             }
             //both users are blocking
-            if(blocks.Count() > 1)
+            if (blocks.Count > 1)
             {
                 return BlockStatus.Both;
             }
@@ -164,7 +166,7 @@ namespace Recipi_API.Services
         {
             var rels = await db.UserRelationships.Where(rel => (rel.InitiatingUserId == initiatingUserId || rel.ReceivingUserId == recievingUserId)).ToListAsync();
 
-            if(rels.Count > 0)
+            if (rels.Count > 0)
             {
                 db.UserRelationships.RemoveRange(rels);
                 await db.SaveChangesAsync();
@@ -195,9 +197,9 @@ namespace Recipi_API.Services
         }
         public async Task<bool> CheckUser(int userId)
         {
-            var userCount = await db.Users.Where(user => user.UserId == userId).CountAsync();       
+            var userCount = await db.Users.Where(user => user.UserId == userId).CountAsync();
             return userCount > 0;
-        }   
+        }
         public async Task<bool> CheckEmail(string email)
         {
             var userCount = await db.Users.Where(user => user.Email == email).CountAsync();
@@ -208,13 +210,15 @@ namespace Recipi_API.Services
         {
             if (!updates.Username.IsNullOrEmpty())
             {
+#pragma warning disable CS8601 // Possible null reference assignment.
                 user.Username = updates.Username;
-            }   
-            if(!updates.ProfilePicture.IsNullOrEmpty())
+#pragma warning restore CS8601 // Possible null reference assignment.
+            }
+            if (!updates.ProfilePicture.IsNullOrEmpty())
             {
                 user.ProfilePicture = updates.ProfilePicture;
             }
-            if(!updates.Biography.IsNullOrEmpty())
+            if (!updates.Biography.IsNullOrEmpty())
             {
                 user.Biography = updates.Biography;
             }
@@ -240,6 +244,6 @@ namespace Recipi_API.Services
         }
 
 
-        
+
     }
 }

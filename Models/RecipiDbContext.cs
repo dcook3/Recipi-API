@@ -50,7 +50,6 @@ public partial class RecipiDbContext : DbContext
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=recipi-db-mssql.cmnzbcgsvlqu.us-east-2.rds.amazonaws.com,1433;Database=recipi-db;User ID=JDLRecipi;Password=Capstone_2023;Encrypt=True;Connection Timeout=30;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -2,20 +2,19 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Recipi_API.Services;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // set correct issuer and audience in appsettings
 string? HOST_ENV = System.Environment.GetEnvironmentVariable("ASPNETCORE_HOST_ENVIRONMENT");
-if (HOST_ENV == null)
-{
-    HOST_ENV = "Docker";
-}
+HOST_ENV ??= "Docker";
 builder.Configuration.AddJsonFile($"appsettings.{HOST_ENV}.json");
 
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
+#pragma warning disable CS8604 // Possible null reference argument.
     options.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateActor = true,
@@ -25,6 +24,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
+#pragma warning restore CS8604 // Possible null reference argument.
 });  
 builder.Services.AddAuthentication();
 
@@ -62,7 +62,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddSingleton<IModeratorService, ModeratorService>();
 builder.Services.AddSingleton<IPostInteractionsService, PostInteractionsService>();
 builder.Services.AddSingleton<IPostFetchService, PostFetchService>();
@@ -90,6 +90,17 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 app.UseAuthentication();
 
-app.MapControllers();
+app.MapControllers()
+    .RequireAuthorization(policy =>
+    {
+        policy
+        .RequireAuthenticatedUser()
+        .RequireClaim("Id")
+        .RequireClaim("Username")
+        .RequireClaim("Email")
+        .RequireClaim(ClaimTypes.Role, new string[] { "User", "Admin" })
+        .RequireAuthenticatedUser()
+        .Build();
+    });
 
 app.Run();

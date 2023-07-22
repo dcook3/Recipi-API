@@ -37,7 +37,6 @@ namespace Recipi_API.Controllers
                 if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
                     posts = await _fetchService.GetRecommendedPosts(currentId);
-
                 }
                 else
                 {
@@ -55,11 +54,18 @@ namespace Recipi_API.Controllers
             }
             catch (Exception ex)
             {
-                if (ex.InnerException != null)
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
                 {
-                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
                 }
-                return StatusCode(500, ex.Message);
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
 
@@ -89,11 +95,18 @@ namespace Recipi_API.Controllers
             }
             catch (Exception ex)
             {
-                if (ex.InnerException != null)
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
                 {
-                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
                 }
-                return StatusCode(500, ex.Message);
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
 
@@ -114,11 +127,18 @@ namespace Recipi_API.Controllers
             }
             catch (Exception ex)
             {
-                if (ex.InnerException != null)
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
                 {
-                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
                 }
-                return StatusCode(500, ex.Message);
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
 
@@ -127,7 +147,6 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                
                 Post post = await _fetchService.GetSinglePost(postId);
                 if (post != null)
                 {
@@ -147,11 +166,18 @@ namespace Recipi_API.Controllers
             }
             catch (Exception ex)
             {
-                if (ex.InnerException != null)
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
                 {
-                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
                 }
-                return StatusCode(500, ex.Message);
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
 
@@ -161,36 +187,39 @@ namespace Recipi_API.Controllers
             try
             {
                 List<PostComment> comments = await _interactionsService.GetComments(postId);
-                if(comments.Count > 0)
+                int currentId;
+                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
-                    int currentId;
-                    if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                    foreach (PostComment comment in comments)
                     {
-                        foreach (PostComment comment in comments)
+                        BlockStatus blockStatus = await _userService.CheckBlock(currentId, comment.UserId);
+                        if (blockStatus == BlockStatus.Blocked)
                         {
-                            BlockStatus blockStatus = await _userService.CheckBlock(currentId, comment.UserId);
-                            if (blockStatus == BlockStatus.Blocked)
-                            {
-                                comments.Remove(comment);
-                            }
+                            comments.Remove(comment);
                         }
                     }
-                    else
-                    {
-                        return BadRequest("Must be logged in to see comments.");
-                    }
-                    
-                    return Ok(comments);
                 }
-                return NotFound();
+                else
+                {
+                    return BadRequest("Must be logged in to see comments.");
+                }
+                    
+                return Ok(comments);
             }
             catch (Exception ex)
             {
-                if (ex.InnerException != null)
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
                 {
-                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
                 }
-                return StatusCode(500, ex.Message);
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
 
@@ -201,7 +230,7 @@ namespace Recipi_API.Controllers
             try
             {
                 int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
                     int numRows = await _interactionsService.PostComment(postId, currentId, comment);
                     if (numRows > 0)
@@ -221,11 +250,18 @@ namespace Recipi_API.Controllers
             }
             catch (Exception ex)
             {
-                if (ex.InnerException != null)
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
                 {
-                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
                 }
-                return StatusCode(500, ex.Message);
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
 
@@ -256,11 +292,18 @@ namespace Recipi_API.Controllers
             }
             catch (Exception ex)
             {
-                if (ex.InnerException != null)
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
                 {
-                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
                 }
-                return StatusCode(500, ex.Message);
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
 
@@ -290,11 +333,18 @@ namespace Recipi_API.Controllers
             }
             catch (Exception ex)
             {
-                if (ex.InnerException != null)
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
                 {
-                    return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
                 }
-                return StatusCode(500, ex.Message);
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
     }

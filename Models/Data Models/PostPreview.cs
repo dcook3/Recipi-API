@@ -2,7 +2,7 @@
 {
     public class PostPreview
     {
-        public string thumbnailURL;
-        public int postId;
+        public string thumbnailURL { get; set; }
+        public int postId { get; set; }
     }
 }

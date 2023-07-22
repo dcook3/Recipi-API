@@ -57,7 +57,7 @@ public partial class RecipiDbContext : DbContext
     {
         modelBuilder.Entity<BugReport>(entity =>
         {
-            entity.ToTable("BugReport");
+            entity.ToTable("BugReport", b=> b.IsTemporal());
 
             entity.Property(e => e.BugReportId).HasColumnName("bug_report_id");
             entity.Property(e => e.Message)

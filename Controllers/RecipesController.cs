@@ -250,7 +250,7 @@ namespace Recipi_API.Controllers
                     foreach(Ingredient i in stepData.StepIngredients)
                     {
                         StepIngredient si = new StepIngredient();
-                        si.IngredientMeasurementValue = stepData.ingredientMeasuremnetValue;
+                        si.IngredientMeasurementValue = stepData.ingredientMeasurementValue;
                         si.IngredientMeasurementUnit = stepData.ingredientMeasurementLabel;
                         si.IngredientId = i.IngredientId;
                         await _recipeService.CreateRecipeStepIngredient(si);
@@ -310,7 +310,7 @@ namespace Recipi_API.Controllers
                     foreach (Ingredient i in recipeStepData.StepIngredients)
                     {
                         StepIngredient si = new StepIngredient();
-                        si.IngredientMeasurementValue = recipeStepData.ingredientMeasuremnetValue;
+                        si.IngredientMeasurementValue = recipeStepData.ingredientMeasurementValue;
                         si.IngredientMeasurementUnit = recipeStepData.ingredientMeasurementLabel;
                         si.IngredientId = i.IngredientId;
                         await _recipeService.PutRecipeStepIngredient(si);

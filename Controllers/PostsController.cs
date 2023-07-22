@@ -32,7 +32,7 @@ namespace Recipi_API.Controllers
             try
             {
                 List<PostPreview> posts = await _fetchService.GetRecommendedPosts();
-                if (posts != null && posts.Count > 0)
+                if (posts.Count > 0)
                 {
                     return Ok(posts);
                 }
@@ -51,20 +51,29 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [HttpGet("following/{followingId}")]
-        public async Task<IActionResult> GetFollowingPosts(int followingId)
+        [HttpGet("following")]
+        public async Task<IActionResult> GetFollowingPosts()
         {
             try
             {
-                List<PostPreview> posts = await _fetchService.GetFollowingPosts(followingId);
-                if (posts != null && posts.Count > 0)
+                int currentId;
+                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
-                    return Ok(posts);
+                    List<PostPreview> posts = await _fetchService.GetFollowingPosts(currentId);
+                    if (posts != null && posts.Count > 0)
+                    {
+                        return Ok(posts);
+                    }
+                    else
+                    {
+                        return StatusCode(500, "There was a problem with your request. Please try again.");
+                    }
                 }
                 else
                 {
-                    return StatusCode(500, "There was a problem with your request. Please try again.");
+                    return BadRequest("You must be logged in to post a recipe.");
                 }
+                
             }
             catch (Exception ex)
             {

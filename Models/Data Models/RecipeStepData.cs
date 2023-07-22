@@ -10,7 +10,8 @@
 
         public short StepOrder { get; set; }
 
-        public int ingredientMeasuremnetValue { get; set; }
+        public int ingredientMeasurementValue { get; set; }
+
         public string ingredientMeasurementLabel { get; set; }
 
         public ICollection<PostMedium> PostMedia { get; set; } = new List<PostMedium>();

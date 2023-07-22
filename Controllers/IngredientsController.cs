@@ -15,14 +15,13 @@ namespace Recipi_API.Controllers
     public class IngredientsController : ControllerBase
     {
         private readonly IIngredientsService _ingredientsService;
-        private readonly ClaimsIdentity? _claims;
 
-        public IngredientsController(IIngredientsService service, IHttpContextAccessor _context)
+        public IngredientsController(IIngredientsService service)
         {
             _ingredientsService = service;
-            _claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
         }
         //GetIngredientsForRecipe
+        [AllowAnonymous]
         [HttpGet("{recipeId}")]
         public async Task<ActionResult> GetIngredientsForRecipe(int recipeId)
         {
@@ -31,7 +30,7 @@ namespace Recipi_API.Controllers
                 List<StepIngredient> sis = await _ingredientsService.GetIngredientsForRecipe(recipeId);
                 if(sis.Count > 0)
                 {
-                    Dictionary<string, Ingredient> ingDict = new Dictionary<string, Ingredient>();
+                    Dictionary<string, Ingredient> ingDict = new();
                     sis.ForEach(si =>
                     {
                         Ingredient ing = si.Ingredient;
@@ -60,12 +59,23 @@ namespace Recipi_API.Controllers
                 }
             }
         }
+
         //CreateIngredient
-        [HttpPost("")]
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        [HttpPost]
         public async Task<ActionResult> CreateIngredient(IngredientData ingData)
         {
             try
+             {
+              Ingredient i = new()
+              {
+                  IngredientTitle = ingData.IngredientTitle,
+                  CreatedByUserId = ingData.CreatedByUserId
+              };
+              if (ingData.IngredientDescription != null)
+              {
+                  i.IngredientDescription = ingData.IngredientDescription;
+              }
+              if(ingData.IngredientIcon != null)
             {
                 Ingredient i = new();
                 i.IngredientTitle = ingData.IngredientTitle;

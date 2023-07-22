@@ -9,16 +9,14 @@ using System.Security.Claims;
 namespace Recipi_API.Controllers
 {
 
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+    [Authorize(Roles = "Admin")]
     public class ModeratorController : ControllerBase
     {
         private readonly IModeratorService moderatorService;
-        private readonly ClaimsIdentity? _claims;
 
-        public ModeratorController(IModeratorService service, IHttpContextAccessor _context)
+        public ModeratorController(IModeratorService service)
         {
             moderatorService = service;
-            _claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
         }
 
         [HttpGet("reports/post")]

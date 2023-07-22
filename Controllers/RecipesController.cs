@@ -24,18 +24,18 @@ namespace Recipi_API.Controllers
             _claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost]
         public async Task<ActionResult> PostRecipe(RecipeData recipe)
         {
             try
             {
-                Recipe r = new();
-                r.RecipeDescription = recipe.RecipeDescription;
-                r.RecipeTitle = recipe.RecipeTitle;
-                r.CreatedDatetime = DateTime.Now;
-                int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                Recipe r = new()
+                {
+                    RecipeDescription = recipe.RecipeDescription,
+                    RecipeTitle = recipe.RecipeTitle,
+                    CreatedDatetime = DateTime.Now
+                };
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
                     r.UserId = currentId;
                 }
@@ -74,13 +74,12 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpDelete("{recipeId}")]
         public async Task<ActionResult> DeleteRecipe(int recipeId)
         {
             try
             {
-                Recipe r = await _recipeService.GetRecipeById(recipeId);
+                Recipe? r = await _recipeService.GetRecipeById(recipeId);
                 if (r != null)
                 {
                     int numRows = await _recipeService.DeleteRecipe(r);
@@ -116,13 +115,12 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPut("{recipeId}")]
         public async Task<ActionResult> PutRecipe(RecipeData recipeData)
         {
             try
             {
-                Recipe r = await _recipeService.GetRecipeById(recipeData.RecipeId);
+                Recipe? r = await _recipeService.GetRecipeById(recipeData.RecipeId);
                 if (r != null)
                 {
                     r.RecipeId = recipeData.RecipeId;
@@ -132,8 +130,8 @@ namespace Recipi_API.Controllers
                     r.CreatedDatetime = DateTime.Now;
                     r.RecipeSteps = recipeData.RecipeSteps;
 
-                    int currentId;
-                    if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                    
+                    if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                     {
                         r.UserId = currentId;
                     }
@@ -175,13 +173,12 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpGet]
         public async Task<ActionResult> GetUserRecipes(int userId, string? sortBy)
         {
             try
             {
-                List<Recipe> recipes = new List<Recipe>();
+                List<Recipe> recipes = new();
                 if (sortBy != null)
                 {
                      recipes = await _recipeService.GetRecipeCookbook(userId, sortBy);
@@ -215,12 +212,13 @@ namespace Recipi_API.Controllers
         }
 
         //No auth here due to the potential of this being called for non-user viewing of posts.
+        [AllowAnonymous]
         [HttpGet("{recipeId}")]
         public async Task<ActionResult> GetRecipeById(int recipeId)
         {
             try
             {
-                Recipe r = await _recipeService.GetRecipeById(recipeId);
+                Recipe? r = await _recipeService.GetRecipeById(recipeId);
 
                 if (r != null)
                 {
@@ -245,7 +243,7 @@ namespace Recipi_API.Controllers
             }
         }
 
-
+        [AllowAnonymous]
         [HttpGet("{recipeId}/steps")]
         public async Task<ActionResult> GetRecipeSteps(int recipeId)
         {
@@ -276,24 +274,27 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost("{recipeId}/steps")]
         public async Task<ActionResult> PostRecipeStep(RecipeStepData stepData)
         {
             try
             {
-                RecipeStep rs = new();
-                rs.RecipeId = stepData.RecipeId;
-                rs.StepOrder = stepData.StepOrder;
-                rs.StepDescription = stepData.StepDescription;
-                if(stepData.StepIngredients.Count > 0)
+                RecipeStep rs = new()
+                {
+                    RecipeId = stepData.RecipeId,
+                    StepOrder = stepData.StepOrder,
+                    StepDescription = stepData.StepDescription
+                };
+                if (stepData.StepIngredients.Count > 0)
                 {
                     foreach(Ingredient i in stepData.StepIngredients)
                     {
-                        StepIngredient si = new StepIngredient();
-                        si.IngredientMeasurementValue = stepData.ingredientMeasurementValue;
-                        si.IngredientMeasurementUnit = stepData.ingredientMeasurementLabel;
-                        si.IngredientId = i.IngredientId;
+                        StepIngredient si = new()
+                        {
+                            IngredientMeasurementValue = stepData.ingredientMeasurementValue,
+                            IngredientMeasurementUnit = stepData.ingredientMeasurementLabel,
+                            IngredientId = i.IngredientId
+                        };
                         await _recipeService.CreateRecipeStepIngredient(si);
                     }
                 }
@@ -323,12 +324,13 @@ namespace Recipi_API.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("{recipeId}/steps/{stepId}")]
         public async Task<ActionResult> GetRecipeStepById(int stepId)
         {
             try
             {
-                RecipeStep step = await _recipeService.GetRecipeStepById(stepId);
+                RecipeStep? step = await _recipeService.GetRecipeStepById(stepId);
 
                 if (step != null)
                 {
@@ -353,21 +355,23 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+
         [HttpPut("{recipeId}/steps/{stepId}")]
         public async Task<ActionResult> PutRecipeStep(int stepId, RecipeStepData recipeStepData)
         {
             try
             {
-                RecipeStep step = await _recipeService.GetRecipeStepById(stepId);
+                RecipeStep? step = await _recipeService.GetRecipeStepById(stepId);
                 if (step != null) 
                 {
                     foreach (Ingredient i in recipeStepData.StepIngredients)
                     {
-                        StepIngredient si = new StepIngredient();
-                        si.IngredientMeasurementValue = recipeStepData.ingredientMeasurementValue;
-                        si.IngredientMeasurementUnit = recipeStepData.ingredientMeasurementLabel;
-                        si.IngredientId = i.IngredientId;
+                        StepIngredient si = new()
+                        {
+                            IngredientMeasurementValue = recipeStepData.ingredientMeasurementValue,
+                            IngredientMeasurementUnit = recipeStepData.ingredientMeasurementLabel,
+                            IngredientId = i.IngredientId
+                        };
                         await _recipeService.PutRecipeStepIngredient(si);
                     }
                     step.StepOrder = recipeStepData.StepOrder;
@@ -402,13 +406,13 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+
         [HttpDelete("{recipeId}/steps/{stepId}")]
         public async Task<ActionResult> DeleteRecipeStep(int stepId)
         {
             try
             {
-                RecipeStep rs = await _recipeService.GetRecipeStepById(stepId);
+                RecipeStep? rs = await _recipeService.GetRecipeStepById(stepId);
                 if (rs != null)
                 {
                     if (await _recipeService.DeleteRecipeStep(rs) > 0)

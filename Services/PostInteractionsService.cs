@@ -9,7 +9,7 @@ namespace Recipi_API.Services
 {
     public class PostInteractionsService : IPostInteractionsService
     {
-        private static RecipiDbContext context = new RecipiDbContext();
+        private readonly static RecipiDbContext context = new();
         public async Task<List<PostComment>> GetComments(int postId)
         {
             return await context.PostComments.Where(pc => pc.PostId == postId).ToListAsync();
@@ -17,18 +17,20 @@ namespace Recipi_API.Services
 
         public async Task<int> PostComment(int postId, int userId, string comment)
         {
-            PostComment pc = new PostComment();
-            pc.Comment = comment;
-            pc.CommentDatetime = DateTime.Now;
-            pc.PostId = postId;
-            pc.UserId = userId;
+            PostComment pc = new()
+            {
+                Comment = comment,
+                CommentDatetime = DateTime.Now,
+                PostId = postId,
+                UserId = userId
+            };
             context.PostComments.Add(pc);
             return await context.SaveChangesAsync();
         }
 
         public async Task<PostInteraction?> CreatePostInteraction(int postId, int userId)
         {
-            PostInteraction pi = new PostInteraction()
+            PostInteraction pi = new()
             {
                 PostId = postId,
                 UserId = userId,
@@ -74,11 +76,13 @@ namespace Recipi_API.Services
 
         public async Task<int> PostReport(int postId, int userId, string message)
         {
-            PostReport r = new PostReport();
-            r.PostId = postId;
-            r.UserId = userId;
-            r.Message = message;
-            r.ReportedDatetime = DateTime.Now;
+            PostReport r = new()
+            {
+                PostId = postId,
+                UserId = userId,
+                Message = message,
+                ReportedDatetime = DateTime.Now
+            };
             context.PostReports.Add(r);
             return await context.SaveChangesAsync();
         }

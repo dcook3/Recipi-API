@@ -33,7 +33,25 @@ namespace Recipi_API.Services
 
             return postPreviews;
         }
+        public async Task<List<PostPreview>> GetRecommendedPosts()
+        {
+            List<PostPreview> postPreviews = new();
 
+            //https://stackoverflow.com/questions/7927329/sql-ordering-records-by-weight could do something like this with dates today bucket, this week bucket, this month bucket
+            List<Post> posts = await context.Posts.OrderByDescending(p => p.PostInteractions.Where(pi => pi.Liked == true).Count())
+                                                  .ToListAsync();
+            /*
+                                                  .OrderByDescending(p => p.PostInteractions.GroupBy(pi => pi.PostId)
+                                                                                  .Select(pi => pi.Select(pi => pi.Liked == true).Count()))*/
+            foreach (Post p in posts)
+            {
+                PostPreview postPreview = new();
+                postPreview.thumbnailURL = p.ThumbnailUrl;
+                postPreview.postId = p.PostId;
+                postPreviews.Add(postPreview);
+            }
+            return postPreviews;
+        }
         public async Task<List<PostPreview>> GetRecommendedPosts(int userId)
         {
             List<PostPreview> postPreviews = new();

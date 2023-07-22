@@ -67,7 +67,7 @@ namespace Recipi_API.Services
                 }
             }
 
-            pi.Liked = true;
+            pi.Liked = !pi.Liked;
             pi.InteractionDatetime = DateTime.Now;
             return await context.SaveChangesAsync();
         }

@@ -29,9 +29,21 @@ namespace Recipi_API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRecommendedPosts()
         {
+
             try
             {
-                List<PostPreview> posts = await _fetchService.GetRecommendedPosts(1);
+                List<PostPreview> posts;
+                int currentId;
+                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                {
+                    posts = await _fetchService.GetRecommendedPosts(currentId);
+
+                }
+                else
+                {
+                    posts = await _fetchService.GetRecommendedPosts();
+                }
+
                 if (posts.Count > 0)
                 {
                     return Ok(posts);
@@ -71,7 +83,7 @@ namespace Recipi_API.Controllers
                 }
                 else
                 {
-                    return BadRequest("You must be logged in to post a recipe.");
+                    return BadRequest("You must be logged in to view following");
                 }
                 
             }
@@ -238,7 +250,7 @@ namespace Recipi_API.Controllers
                 }
                 else
                 {
-                    return BadRequest("You must be logged in to post a like.");
+                    return BadRequest("You must be logged in to like a post.");
                 }
                     
             }

@@ -31,8 +31,9 @@ namespace Recipi_API.Controllers
         [HttpPost("Login")]
         public async Task<IActionResult> Login(UserLogin login)
         {
-            if (string.IsNullOrEmpty(login.Credential) || string.IsNullOrEmpty(login.Password))
+            try
             {
+
                 return BadRequest("Username and Password are Required");
             }
 
@@ -48,13 +49,8 @@ namespace Recipi_API.Controllers
                 return StatusCode(500);
             }
 
-            var claims = new[]
-            {
-                new Claim("Id", user.UserId.ToString()),
-                new Claim("Username", user.Username),
-                new Claim("Email", user.Email),
-                new Claim(ClaimTypes.Role, user.UserRoles.Last().Role.RoleName)
-            };
+                User? user = await userSvc.AuthenticateLogin(login);
+
 
 #pragma warning disable CS8604 // Possible null reference argument.
             var token = new JwtSecurityToken
@@ -70,33 +66,94 @@ namespace Recipi_API.Controllers
             );
 #pragma warning restore CS8604 // Possible null reference argument.
 
-            string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-            return Ok(tokenString);
+                if (user.UserRoles.Count() != 1)
+                {
+                    return StatusCode(500);
+                }
+
+                var claims = new[]
+                {
+                    new Claim("Id", user.UserId.ToString()),
+                    new Claim("Username", user.Username),
+                    new Claim("Email", user.Email),
+                    new Claim(ClaimTypes.Role, user.UserRoles.Last().Role.RoleName)
+                };
+
+                var token = new JwtSecurityToken
+                (
+                    issuer: this.configuration["Jwt:Issuer"],
+                    audience: this.configuration["Jwt:Audience"],
+                    claims: claims,
+                    expires: DateTime.UtcNow.AddDays(60),
+                    notBefore: DateTime.UtcNow,
+                    signingCredentials: new SigningCredentials(
+                            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
+                            SecurityAlgorithms.HmacSha256)
+                );
+
+                string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+                return Ok(tokenString);
+            }
+            catch (Exception ex)
+            {
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
         }
 
         [AllowAnonymous]
         [HttpPost("Register")]
         public async Task<IActionResult> Register(UserRegistration registration)
         {
-            if (await userSvc.CheckUser(registration.Username))
+            try
             {
-                return Conflict("Username has Been Taken");
+                if (await userSvc.CheckUser(registration.Username))
+                {
+                    return Conflict("Username has Been Taken");
+                }
+
+                if (await userSvc.CheckEmail(registration.Email))
+                {
+                    return Conflict("Email is already in use, Try signing in.");
+                }
+
+                if (await userSvc.CreateUser(registration))
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(500);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
 
-            if (await userSvc.CheckEmail(registration.Email))
-            {
-                return Conflict("Email is already in use, Try signing in.");
-            }
-
-            if (await userSvc.CreateUser(registration))
-            {
-                return Ok();
-            }
-            else
-            {
-                return StatusCode(500);
-            }
         }
 
         [HttpPut()]
@@ -135,119 +192,181 @@ namespace Recipi_API.Controllers
         [HttpGet("me")]
         public async Task<IActionResult> Me()
         {
-
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+            try
             {
-                return BadRequest();
+              if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+
+              {
+                  int userId;
+                  if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+                  {
+                      return BadRequest();
+                  }
+
+                  var user = await userSvc.GetUser(userId);
+
+                  if (user == null)
+                  {
+                      return StatusCode(500);
+                  }
+
+                 return Ok(new
+                {
+                    user.UserId,
+                    user.Username,
+                    user.Email,
+                    user.ProfilePicture,
+                    user.Biography,
+                    user.RegisteredDatetime,
+                    user.Verified
+                });
             }
-
-            var user = await userSvc.GetUser(userId);
-
-            if (user == null)
+            catch (Exception ex)
             {
-                return StatusCode(500);
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
-
-            return Ok(new
-            {
-                user.UserId,
-                user.Username,
-                user.Email,
-                user.ProfilePicture,
-                user.Biography,
-                user.RegisteredDatetime,
-                user.Verified
-            });
+           
         }
        
         [HttpGet("username/{username}")]
         public async Task<IActionResult> GetUserByUsername(string username)
         {
+            try
+            {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
             {
-                return BadRequest();
-            }
-
-            User? foundUser = await userSvc.GetUser(username, selfUserId);
-            if(foundUser == null)
-            {
-                return NotFound();
-            }
-
-            var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
-            if ((int)blockStatus > 0)
-            {
-                if (blockStatus == BlockStatus.Blocked)
+                int selfUserId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out selfUserId))
                 {
-                    return Unauthorized("User has been blocked");
+                    return BadRequest();
                 }
-                else
+
+                User? foundUser = await userSvc.GetUser(username, selfUserId);
+                if(foundUser == null)
                 {
                     return NotFound();
                 }
+
+                var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
+                if ((int)blockStatus > 0)
+                {
+                    if (blockStatus == BlockStatus.Blocked)
+                    {
+                        return Unauthorized("User has been blocked");
+                    }
+                    else
+                    {
+                        return NotFound();
+                    }
+                }
+
+                
+                List<string> combinedRels = new();
+                combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
+                                           .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
+                                           .ToList();
+
+                return Ok(new
+                {
+                    foundUser.UserId,
+                    foundUser.Username,
+                    foundUser.Email,
+                    foundUser.ProfilePicture,
+                    foundUser.Biography,
+                    foundUser.RegisteredDatetime,
+                    YourRelationships = combinedRels
+                });
             }
-
-            List<string> combinedRels = new();
-            combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
-                                       .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
-                                       .ToList();
-
-            return Ok(new
+            catch (Exception ex)
             {
-                foundUser.UserId,
-                foundUser.Username,
-                foundUser.Email,
-                foundUser.ProfilePicture,
-                foundUser.Biography,
-                foundUser.RegisteredDatetime,
-                YourRelationships = combinedRels
-            });
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
         }
         
         [HttpGet("id/{userId}")]
         public async Task<IActionResult> GetUserByUserId(int userId)
         {
+            try
+            {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
             {
-                return BadRequest();
-            }
-
-            User? foundUser = await userSvc.GetUser(userId, selfUserId);
-            if (foundUser == null)
-            {
-                return NotFound();
-            }
-
-            var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
-            if ((int)blockStatus > 0)
-            {
-                if ((int)blockStatus == 2)
+                int selfUserId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out selfUserId))
                 {
-                    return Unauthorized("User has been blocked");
+                    return BadRequest();
                 }
-                else
+
+                User? foundUser = await userSvc.GetUser(userId, selfUserId);
+                if (foundUser == null)
                 {
                     return NotFound();
                 }
-            }
 
-            List<string> combinedRels = new();
-            combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
-                                       .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
-                                       .ToList();
-            return Ok(new
+                var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
+                if ((int)blockStatus > 0)
+                {
+                    if ((int)blockStatus == 2)
+                    {
+                        return Unauthorized("User has been blocked");
+                    }
+                    else
+                    {
+                        return NotFound();
+                    }
+                }
+
+                List<string> combinedRels = new List<string>();
+                combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
+                                           .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
+                                           .ToList();
+                return Ok(new
+                {
+                    UserId = foundUser.UserId,
+                    Username = foundUser.Username,
+                    Email = foundUser.Email,
+                    ProfilePicture = foundUser.ProfilePicture,
+                    Biography = foundUser.Biography,
+                    RegisteredDateTime = foundUser.RegisteredDatetime,
+                    YourRelationships = combinedRels
+                });
+            }
+            catch (Exception ex)
             {
-                foundUser.UserId,
-                foundUser.Username,
-                foundUser.Email,
-                foundUser.ProfilePicture,
-                foundUser.Biography,
-                foundUser.RegisteredDatetime,
-                YourRelationships = combinedRels
-            });
-        }
-        
-        
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
 
 
 
@@ -255,178 +374,289 @@ namespace Recipi_API.Controllers
         [HttpGet("Friend")]
         public async Task<IActionResult> GetFriends()
         {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+            try
             {
-                return BadRequest();
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+                {
+                    return BadRequest();
+                }
+
+                var friends = await userSvc.GetFriends(userId);
+                return Ok(friends.Select(user =>
+                    new
+                    {
+                        user.UserId,
+                      user.Username,
+                      user.Biography,
+                      user.ProfilePicture
+                    }
+                ));
+            }
+            catch (Exception ex)
+            {
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
 
-            var friends = await userSvc.GetFriends(userId);
-            return Ok(friends.Select(user =>
-                new
-                {
-                    user.UserId,
-                    user.Username,
-                    user.Biography,
-                    user.ProfilePicture
-                }
-            ));
         }
         
         [HttpGet("Friend/Requests")]
         public async Task<IActionResult> GetFriendRequests()
         {
+            try
+            {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
-                return BadRequest();
-            }
-
-            var friendRequests = await userSvc.GetFriendRequests(userId);
-            return Ok(friendRequests.Select(user =>
-                new
+                int userId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
                 {
-                    user.UserId,
-                    user.Username,
-                    user.Biography,
-                    user.ProfilePicture
+                    return BadRequest();
                 }
-            ));
+
+                var friendRequests = await userSvc.GetFriendRequests(userId);
+                return Ok(friendRequests.Select(user =>
+                    new
+                    {
+                      user.UserId,
+                      user.Username,
+                      user.Biography,
+                      user.ProfilePicture
+                    }
+                ));
+            }
+            catch (Exception ex)
+            {
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
         }
         
         [HttpPost("Friend/Request/{recievingUserId}")]
         public async Task<IActionResult> FriendRequest(int recievingUserId)
         {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+            try
             {
-                return BadRequest();
-            }
+              if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+              {
+                  return BadRequest();
+              }
 
             if (!await userSvc.CheckUser(recievingUserId))
             {
-                return NotFound("User Not Found");
-            }
-
-            var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
-            if((int) blockStatus > 0)
-            {
-                if((int) blockStatus == 2)
+                int userId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
                 {
-                    return Unauthorized("User has been blocked");
+                    return BadRequest();
+                }
+
+                if (!await userSvc.CheckUser(recievingUserId))
+                {
+                    return NotFound("User Not Found");
+                }
+
+                var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
+                if((int) blockStatus > 0)
+                {
+                    if((int) blockStatus == 2)
+                    {
+                        return Unauthorized("User has been blocked");
+                    }
+                    else
+                    {
+                        return NotFound();
+                    }
+                }
+
+                var rels = await userSvc.GetRelationships(userId, recievingUserId);
+                var friendRequest = rels.Where(rels => rels.Relationship == "friendRequest").FirstOrDefault();
+
+                if(friendRequest != null)
+                {
+                    return Conflict("A Friend Request has already been sent");
+                }
+
+                if(await userSvc.RequestFriend(userId, recievingUserId))
+                {
+                    return Ok();
                 }
                 else
                 {
-                    return NotFound();
+                    return StatusCode(500);
                 }
             }
-
-            var rels = await userSvc.GetRelationships(userId, recievingUserId);
-            var friendRequest = rels.Where(rels => rels.Relationship == "friendRequest").FirstOrDefault();
-
-            if(friendRequest != null)
+            catch (Exception ex)
             {
-                return Conflict("A Friend Request has already been sent");
-            }
-
-            if(await userSvc.RequestFriend(userId, recievingUserId))
-            {
-                return Ok();
-            }
-            else
-            {
-                return StatusCode(500);
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
         
         [HttpPost("Friend/Accept/{recievingUserId}")]
         public async Task<IActionResult> AcceptFriend(int recievingUserId)
         {
+            try
+            {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
-                return BadRequest();
-            }
-
-            if (!await userSvc.CheckUser(recievingUserId))
-            {
-                return NotFound("User Not Found");
-            }
-
-            var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
-            if ((int)blockStatus > 0)
-            {
-                if ((int)blockStatus == 2)
+                int userId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
                 {
-                    return Unauthorized("User has been blocked");
+                    return BadRequest();
+                }
+
+                if (!await userSvc.CheckUser(recievingUserId))
+                {
+                    return NotFound("User Not Found");
+                }
+
+                var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
+                if ((int)blockStatus > 0)
+                {
+                    if ((int)blockStatus == 2)
+                    {
+                        return Unauthorized("User has been blocked");
+                    }
+                    else
+                    {
+                        return Unauthorized("You have been blocked by user");
+                    }
+                }
+
+                var rels = await userSvc.GetRelationships(userId, recievingUserId);
+                var friendRequest = rels.Where(rels => rels.Relationship == "friendRequest" && rels.ReceivingUserId == userId).FirstOrDefault();
+
+                if (friendRequest == null)
+                {
+                    return NotFound("Friend request can't be found");
+                }
+
+                if (await userSvc.AcceptFriend(friendRequest))
+                {
+                    return Ok();
                 }
                 else
                 {
-                    return Unauthorized("You have been blocked by user");
+                    return StatusCode(500);
                 }
             }
-
-            var rels = await userSvc.GetRelationships(userId, recievingUserId);
-            var friendRequest = rels.Where(rels => rels.Relationship == "friendRequest" && rels.ReceivingUserId == userId).FirstOrDefault();
-
-            if (friendRequest == null)
+            catch (Exception ex)
             {
-                return NotFound("Friend request can't be found");
-            }
-
-            if (await userSvc.AcceptFriend(friendRequest))
-            {
-                return Ok();
-            }
-            else
-            {
-                return StatusCode(500);
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
         
         [HttpDelete("Friend/Deny/{recievingUserId}")]
         public async Task<IActionResult> DenyFriend(int recievingUserId)
         {
+            try
+            {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
-            {
-                return BadRequest();
-            }
 
-            if (!await userSvc.CheckUser(recievingUserId))
             {
-                return NotFound("User Not Found");
-            }
-
-            var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
-            if ((int)blockStatus > 0)
-            {
-                if ((int)blockStatus == 2)
+                int userId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
                 {
-                    return Unauthorized("User has been blocked");
+                    return BadRequest();
+                }
+
+                if (!await userSvc.CheckUser(recievingUserId))
+                {
+                    return NotFound("User Not Found");
+                }
+
+                var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
+                if ((int)blockStatus > 0)
+                {
+                    if ((int)blockStatus == 2)
+                    {
+                        return Unauthorized("User has been blocked");
+                    }
+                    else
+                    {
+                        return Unauthorized("You have been blocked by user");
+                    }
+                }
+
+                var rels = await userSvc.GetRelationships(userId, recievingUserId);
+                var friendRequest = rels.Where(rels => rels.Relationship == "friendRequest").FirstOrDefault();
+
+                if (friendRequest == null)
+                {
+                    return NotFound("Friend request can't be found");
+                }
+
+                if (await userSvc.RemoveRelationship(friendRequest))
+                {
+                    return Ok();
                 }
                 else
                 {
-                    return Unauthorized("You have been blocked by user");
+                    return StatusCode(500);
                 }
             }
-
-            var rels = await userSvc.GetRelationships(userId, recievingUserId);
-            var friendRequest = rels.Where(rels => rels.Relationship == "friendRequest").FirstOrDefault();
-
-            if (friendRequest == null)
+            catch (Exception ex)
             {
-                return NotFound("Friend request can't be found");
-            }
-
-            if (await userSvc.RemoveRelationship(friendRequest))
-            {
-                return Ok();
-            }
-            else
-            {
-                return StatusCode(500);
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
         
         [HttpDelete("Friend/Remove/{recievingUserId}")]
         public async Task<IActionResult> RemoveFriend(int recievingUserId)
         {
+            try
+            {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
@@ -434,37 +664,61 @@ namespace Recipi_API.Controllers
 
             if (!await userSvc.CheckUser(recievingUserId))
             {
-                return NotFound("User Not Found");
-            }
-
-            var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
-            if ((int)blockStatus > 0)
-            {
-                if ((int)blockStatus == 2)
+                int userId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
                 {
-                    return Unauthorized("User has been blocked");
+                    return BadRequest();
+                }
+
+                if (!await userSvc.CheckUser(recievingUserId))
+                {
+                    return NotFound("User Not Found");
+                }
+
+                var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
+                if ((int)blockStatus > 0)
+                {
+                    if ((int)blockStatus == 2)
+                    {
+                        return Unauthorized("User has been blocked");
+                    }
+                    else
+                    {
+                        return Unauthorized("You have been blocked by user");
+                    }
+                }
+
+                var rels = await userSvc.GetRelationships(userId, recievingUserId);
+                var friend = rels.Where(rels => rels.Relationship == "friend").FirstOrDefault();
+
+                if (friend == null)
+                {
+                    return NotFound("Friend request can't be found");
+                }
+
+                if (await userSvc.RemoveRelationship(friend))
+                {
+                    return Ok();
                 }
                 else
                 {
-                    return Unauthorized("You have been blocked by user");
+                    return StatusCode(500);
                 }
             }
-
-            var rels = await userSvc.GetRelationships(userId, recievingUserId);
-            var friend = rels.Where(rels => rels.Relationship == "friend").FirstOrDefault();
-
-            if (friend == null)
+            catch (Exception ex)
             {
-                return NotFound("Friend request can't be found");
-            }
-
-            if (await userSvc.RemoveRelationship(friend))
-            {
-                return Ok();
-            }
-            else
-            {
-                return StatusCode(500);
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
 
@@ -473,6 +727,8 @@ namespace Recipi_API.Controllers
         [HttpPost("Follow/{recievingUserId}")]
         public async Task<IActionResult> Follow(int recievingUserId)
         {
+            try
+            {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
@@ -480,29 +736,47 @@ namespace Recipi_API.Controllers
 
             if (!await userSvc.CheckUser(recievingUserId))
             {
-                return NotFound("User Not Found");
-            }
-
-            var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
-            if ((int)blockStatus > 0)
-            {
-                if ((int)blockStatus == 2)
+                int userId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
                 {
-                    return Unauthorized("User has been blocked");
+                    return BadRequest();
                 }
-                else
+
+                if (!await userSvc.CheckUser(recievingUserId))
                 {
-                    return NotFound();
+                    return NotFound("User Not Found");
                 }
-            }
 
-            var rels = await userSvc.GetRelationships(userId, recievingUserId);
-            var following = rels.Where(rels => rels.Relationship == "follow" &&
-                                                rels.InitiatingUserId == userId).FirstOrDefault();
+                var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
+                if ((int)blockStatus > 0)
+                {
+                    if ((int)blockStatus == 2)
+                    {
+                        return Unauthorized("User has been blocked");
+                    }
+                    else
+                    {
+                        return NotFound();
+                    }
+                }
 
-            if (following == null)
-            {
-                if (await userSvc.FollowUser(userId, recievingUserId))
+                var rels = await userSvc.GetRelationships(userId, recievingUserId);
+                var following = rels.Where(rels => rels.Relationship == "follow" &&
+                                                    rels.InitiatingUserId == userId).FirstOrDefault();
+
+                if (following == null)
+                {
+                    if (await userSvc.FollowUser(userId, recievingUserId))
+                    {
+                        return Ok();
+                    }
+                    else
+                    {
+                        return StatusCode(500);
+                    }
+                }
+
+                if (await userSvc.RemoveRelationship(following))
                 {
                     return Ok();
                 }
@@ -511,97 +785,164 @@ namespace Recipi_API.Controllers
                     return StatusCode(500);
                 }
             }
-
-            if (await userSvc.RemoveRelationship(following))
+            catch (Exception ex)
             {
-                return Ok();
-            }
-            else
-            {
-                return StatusCode(500);
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
         
         [HttpGet("Followers")]
         public async Task<IActionResult> GetFollowers()
         {
+            try
+            {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
-                return BadRequest();
-            }
-
-            var followers = await userSvc.GetFollowers(userId);
-
-            return Ok(followers.Select(user =>
-                new
+                int userId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
                 {
-                    user.UserId,
-                    user.Username,
-                    user.Biography,
-                    user.ProfilePicture
+                    return BadRequest();
                 }
-            ));
+
+                var followers = await userSvc.GetFollowers(userId);
+
+                return Ok(followers.Select(user =>
+                    new
+                    {
+                        user.UserId,
+                        user.Username,
+                        user.Biography,
+                        user.ProfilePicture
+                    }
+                ));
+            }
+            catch (Exception ex)
+            {
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
         }
         
         [HttpGet("Following")]
         public async Task<IActionResult> GetFollowing()
         {
+            try
+            {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
-                return BadRequest();
-            }
-
-            var following = await userSvc.GetFollowing(userId);
-
-            return Ok(following.Select(user =>
-                new
+                int userId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
                 {
-                    user.UserId,
-                    user.Username,
-                    user.Biography,
-                    user.ProfilePicture
+                    return BadRequest();
                 }
-            ));
+
+                var following = await userSvc.GetFollowing(userId);
+
+                return Ok(following.Select(user =>
+                    new
+                    {
+                        user.UserId,
+                        user.Username,
+                        user.Biography,
+                        user.ProfilePicture
+                    }
+                ));
+            }
+            catch (Exception ex)
+            {
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
         }
         
 
         [HttpPost("Block/{recievingUserId}")]
         public async Task<IActionResult> Block(int recievingUserId)
         {
+            try
+            {
             if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
-                return BadRequest();
-            }
-
-            if (!await userSvc.CheckUser(recievingUserId))
-            {
-                return NotFound("User Not Found");
-            }
-
-            var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
-            
-            if ((int)blockStatus == 2)
-            {
-                var rels = await userSvc.GetRelationships(userId, recievingUserId);
-                var blocking = rels.Where(rels => rels.Relationship == "block" &&
-                                                    rels.InitiatingUserId == userId).FirstOrDefault();
-                if (blocking != null && await userSvc.RemoveRelationship(blocking))
+                int userId;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
                 {
-                    return Ok();
+                    return BadRequest();
+                }
+
+                if (!await userSvc.CheckUser(recievingUserId))
+                {
+                    return NotFound("User Not Found");
+                }
+
+                var blockStatus = await userSvc.CheckBlock(userId, recievingUserId);
+            
+                if ((int)blockStatus == 2)
+                {
+                    var rels = await userSvc.GetRelationships(userId, recievingUserId);
+                    var blocking = rels.Where(rels => rels.Relationship == "block" &&
+                                                        rels.InitiatingUserId == userId).FirstOrDefault();
+                   if (blocking != null && await userSvc.RemoveRelationship(blocking))
+                  {
+                      return Ok();
+                  }
+                  else
+                  {
+                      return StatusCode(500);
+                  }
+                }
+                if(await userSvc.blockUser(userId, recievingUserId)){
+                  return Ok()
                 }
                 else
                 {
-                    return StatusCode(500);
+                  return StatusCode(500, "Internal server error. Please try again later.")
                 }
-            }
-
-            if (await userSvc.BlockUser(userId, recievingUserId))
+             }
+            catch (Exception ex)
             {
-                return Ok();
-            }
-            else
-            {
-                return StatusCode(500);
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
         
@@ -609,22 +950,40 @@ namespace Recipi_API.Controllers
         [HttpPost("/BugReport")]
         public async Task<IActionResult> ReportBug(string message)
         {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+            try
             {
-                return BadRequest();
-            }
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+                {
+                    return BadRequest();
+                }
 
-            if (message.IsNullOrEmpty())
+                if (message.IsNullOrEmpty())
+                {
+                    return BadRequest("Message is required");
+                }
+
+                if(await userSvc.CreateBugReport(userId, message))
+                {
+                    return Ok();
+                }
+
+                return StatusCode(500);
+            }
+            catch (Exception ex)
             {
-                return BadRequest("Message is required");
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
-
-            if(await userSvc.CreateBugReport(userId, message))
-            {
-                return Ok();
-            }
-
-            return StatusCode(500);
         }
         
     }

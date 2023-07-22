@@ -45,36 +45,74 @@ namespace Recipi_API.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
 
         //CreateIngredient
-        [HttpPost("new")]
+        [HttpPost]
         public async Task<ActionResult> CreateIngredient(IngredientData ingData)
         {
-            Ingredient i = new()
+            try
+             {
+              Ingredient i = new()
+              {
+                  IngredientTitle = ingData.IngredientTitle,
+                  CreatedByUserId = ingData.CreatedByUserId
+              };
+              if (ingData.IngredientDescription != null)
+              {
+                  i.IngredientDescription = ingData.IngredientDescription;
+              }
+              if(ingData.IngredientIcon != null)
             {
-                IngredientTitle = ingData.IngredientTitle,
-                CreatedByUserId = ingData.CreatedByUserId
-            };
-            if (ingData.IngredientDescription != null)
-            {
-                i.IngredientDescription = ingData.IngredientDescription;
-            }
-            if(ingData.IngredientIcon != null)
-            {
-                i.IngredientIcon = ingData.IngredientIcon;
-            }
+                Ingredient i = new();
+                i.IngredientTitle = ingData.IngredientTitle;
+                i.CreatedByUserId = ingData.CreatedByUserId;
+                if (ingData.IngredientDescription != null)
+                {
+                    i.IngredientDescription = ingData.IngredientDescription;
+                }
+                if (ingData.IngredientIcon != null)
+                {
+                    i.IngredientIcon = ingData.IngredientIcon;
+                }
 
-            int numRows = await _ingredientsService.CreateIngredient(i);
-            if (numRows > 0)
-            {
-                return Ok();
+                int numRows = await _ingredientsService.CreateIngredient(i);
+                if (numRows > 0)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return BadRequest("Please check form data.");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return BadRequest("Please check form data.");
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
             }
         }
     }

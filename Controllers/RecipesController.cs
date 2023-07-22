@@ -16,7 +16,6 @@ namespace Recipi_API.Controllers
     public class RecipesController : ControllerBase
     {
         private readonly IRecipeService _recipeService;
-        private readonly UserService _userService;
         private readonly ClaimsIdentity? _claims;
 
         public RecipesController(IRecipeService recipeService, IHttpContextAccessor _context)
@@ -31,12 +30,13 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                Recipe r = new();
-                r.RecipeDescription = recipe.RecipeDescription;
-                r.RecipeTitle = recipe.RecipeTitle;
-                r.CreatedDatetime = DateTime.Now;
-                int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                Recipe r = new()
+                {
+                    RecipeDescription = recipe.RecipeDescription,
+                    RecipeTitle = recipe.RecipeTitle,
+                    CreatedDatetime = DateTime.Now
+                };
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
                     r.UserId = currentId;
                 }
@@ -74,7 +74,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                Recipe r = await _recipeService.GetRecipeById(recipeId);
+                Recipe? r = await _recipeService.GetRecipeById(recipeId);
                 if (r != null)
                 {
                     int numRows = await _recipeService.DeleteRecipe(r);
@@ -109,7 +109,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                Recipe r = await _recipeService.GetRecipeById(recipeData.RecipeId);
+                Recipe? r = await _recipeService.GetRecipeById(recipeData.RecipeId);
                 if (r != null)
                 {
                     r.RecipeId = recipeData.RecipeId;
@@ -119,8 +119,8 @@ namespace Recipi_API.Controllers
                     r.CreatedDatetime = DateTime.Now;
                     r.RecipeSteps = recipeData.RecipeSteps;
 
-                    int currentId;
-                    if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                    
+                    if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                     {
                         r.UserId = currentId;
                     }
@@ -161,7 +161,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                List<Recipe> recipes = new List<Recipe>();
+                List<Recipe> recipes = new();
                 if (sortBy != null)
                 {
                      recipes = await _recipeService.GetRecipeCookbook(userId, sortBy);
@@ -193,7 +193,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                Recipe r = await _recipeService.GetRecipeById(recipeId);
+                Recipe? r = await _recipeService.GetRecipeById(recipeId);
 
                 if (r != null)
                 {
@@ -241,18 +241,22 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                RecipeStep rs = new();
-                rs.RecipeId = stepData.RecipeId;
-                rs.StepOrder = stepData.StepOrder;
-                rs.StepDescription = stepData.StepDescription;
-                if(stepData.StepIngredients.Count > 0)
+                RecipeStep rs = new()
+                {
+                    RecipeId = stepData.RecipeId,
+                    StepOrder = stepData.StepOrder,
+                    StepDescription = stepData.StepDescription
+                };
+                if (stepData.StepIngredients.Count > 0)
                 {
                     foreach(Ingredient i in stepData.StepIngredients)
                     {
-                        StepIngredient si = new StepIngredient();
-                        si.IngredientMeasurementValue = stepData.ingredientMeasurementValue;
-                        si.IngredientMeasurementUnit = stepData.ingredientMeasurementLabel;
-                        si.IngredientId = i.IngredientId;
+                        StepIngredient si = new()
+                        {
+                            IngredientMeasurementValue = stepData.ingredientMeasurementValue,
+                            IngredientMeasurementUnit = stepData.ingredientMeasurementLabel,
+                            IngredientId = i.IngredientId
+                        };
                         await _recipeService.CreateRecipeStepIngredient(si);
                     }
                 }
@@ -280,7 +284,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                RecipeStep step = await _recipeService.GetRecipeStepById(stepId);
+                RecipeStep? step = await _recipeService.GetRecipeStepById(stepId);
 
                 if (step != null)
                 {
@@ -304,15 +308,17 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                RecipeStep step = await _recipeService.GetRecipeStepById(stepId);
+                RecipeStep? step = await _recipeService.GetRecipeStepById(stepId);
                 if (step != null) 
                 {
                     foreach (Ingredient i in recipeStepData.StepIngredients)
                     {
-                        StepIngredient si = new StepIngredient();
-                        si.IngredientMeasurementValue = recipeStepData.ingredientMeasurementValue;
-                        si.IngredientMeasurementUnit = recipeStepData.ingredientMeasurementLabel;
-                        si.IngredientId = i.IngredientId;
+                        StepIngredient si = new()
+                        {
+                            IngredientMeasurementValue = recipeStepData.ingredientMeasurementValue,
+                            IngredientMeasurementUnit = recipeStepData.ingredientMeasurementLabel,
+                            IngredientId = i.IngredientId
+                        };
                         await _recipeService.PutRecipeStepIngredient(si);
                     }
                     step.StepOrder = recipeStepData.StepOrder;
@@ -346,7 +352,7 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                RecipeStep rs = await _recipeService.GetRecipeStepById(stepId);
+                RecipeStep? rs = await _recipeService.GetRecipeStepById(stepId);
                 if (rs != null)
                 {
                     if (await _recipeService.DeleteRecipeStep(rs) > 0)

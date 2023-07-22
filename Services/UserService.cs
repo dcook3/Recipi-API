@@ -208,7 +208,9 @@ namespace Recipi_API.Services
         {
             if (!updates.Username.IsNullOrEmpty())
             {
+#pragma warning disable CS8601 // Possible null reference assignment.
                 user.Username = updates.Username;
+#pragma warning restore CS8601 // Possible null reference assignment.
             }   
             if(!updates.ProfilePicture.IsNullOrEmpty())
             {

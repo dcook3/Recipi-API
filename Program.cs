@@ -16,6 +16,7 @@ builder.Configuration.AddJsonFile($"appsettings.{HOST_ENV}.json");
 
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
+#pragma warning disable CS8604 // Possible null reference argument.
     options.TokenValidationParameters = new TokenValidationParameters()
     {
         ValidateActor = true,
@@ -25,6 +26,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
     };
+#pragma warning restore CS8604 // Possible null reference argument.
 });  
 builder.Services.AddAuthentication();
 

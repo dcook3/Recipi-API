@@ -33,8 +33,7 @@ namespace Recipi_API.Controllers
             try
             {
                 List<PostPreview> posts;
-                int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
                     posts = await _fetchService.GetRecommendedPosts(currentId);
 
@@ -69,7 +68,7 @@ namespace Recipi_API.Controllers
             try
             {
                 int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
                     List<PostPreview> posts = await _fetchService.GetFollowingPosts(currentId);
                     if (posts != null && posts.Count > 0)
@@ -128,11 +127,11 @@ namespace Recipi_API.Controllers
             try
             {
                 
-                Post post = await _fetchService.GetSinglePost(postId);
+                Post? post = await _fetchService.GetSinglePost(postId);
                 if (post != null)
                 {
                     int currentId;
-                    if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                    if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                     {
                         //only create post interaction if user is logged in
                         await _interactionsService.CreatePostInteraction(postId, currentId);
@@ -164,7 +163,7 @@ namespace Recipi_API.Controllers
                 if(comments.Count > 0)
                 {
                     int currentId;
-                    if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                    if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                     {
                         foreach (PostComment comment in comments)
                         {
@@ -201,7 +200,7 @@ namespace Recipi_API.Controllers
             try
             {
                 int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
                     int numRows = await _interactionsService.PostComment(postId, currentId, comment);
                     if (numRows > 0)
@@ -236,7 +235,7 @@ namespace Recipi_API.Controllers
             try
             {
                 int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
                     int numRows = await _interactionsService.PostLike(postId, currentId);
                     if (numRows > 0)
@@ -271,7 +270,7 @@ namespace Recipi_API.Controllers
             try
             {
                 int currentId;
-                if (int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out currentId))
                 {
                     int numRows = await _interactionsService.PostReport(postId, currentId, message);
                     if (numRows > 0)

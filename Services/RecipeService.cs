@@ -5,7 +5,7 @@ namespace Recipi_API.Services
 {
     public class RecipeService : IRecipeService
     {
-        private static RecipiDbContext context = new RecipiDbContext();
+        private readonly static RecipiDbContext context = new();
 
         public async Task<int> CreateRecipe(Recipe recipe)
         {
@@ -26,7 +26,7 @@ namespace Recipi_API.Services
             return await context.SaveChangesAsync();
         }
 
-        public async Task<RecipeStep>? GetRecipeStepById(int stepId)
+        public async Task<RecipeStep?> GetRecipeStepById(int stepId)
         {
             return await context.RecipeSteps.FindAsync(stepId);
         }
@@ -54,7 +54,7 @@ namespace Recipi_API.Services
             return await context.SaveChangesAsync();
         }
 
-        public async Task<Recipe>? GetRecipeById(int recipeId)
+        public async Task<Recipe?> GetRecipeById(int recipeId)
         {
             return await context.Recipes.FindAsync(recipeId);
         }

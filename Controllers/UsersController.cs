@@ -55,6 +55,7 @@ namespace Recipi_API.Controllers
                 new Claim(ClaimTypes.Role, user.UserRoles.Last().Role.RoleName)
             };
 
+#pragma warning disable CS8604 // Possible null reference argument.
             var token = new JwtSecurityToken
             (
                 issuer: this.configuration["Jwt:Issuer"],
@@ -66,6 +67,7 @@ namespace Recipi_API.Controllers
                         new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
                         SecurityAlgorithms.HmacSha256)
             );
+#pragma warning restore CS8604 // Possible null reference argument.
 
             string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
@@ -234,10 +236,12 @@ namespace Recipi_API.Controllers
                 return NotFound();
             }
 
+#pragma warning disable CS8604 // Possible null reference argument. checks for IsNullOrEmpty()
             if (!updates.Username.IsNullOrEmpty() && await userSvc.CheckUser(updates.Username))
             {
                 return Conflict("Username is already in use");
             }
+#pragma warning restore CS8604 // Possible null reference argument.
 
 
             if (await userSvc.UpdateUserProfile(updates, user))
@@ -606,7 +610,7 @@ namespace Recipi_API.Controllers
                 var rels = await userSvc.GetRelationships(userId, recievingUserId);
                 var blocking = rels.Where(rels => rels.Relationship == "block" &&
                                                     rels.InitiatingUserId == userId).FirstOrDefault();
-                if (await userSvc.RemoveRelationship(blocking))
+                if (blocking != null && await userSvc.RemoveRelationship(blocking))
                 {
                     return Ok();
                 }

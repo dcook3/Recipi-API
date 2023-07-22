@@ -25,9 +25,11 @@ namespace Recipi_API.Services
 
             foreach (Post p in posts)
             {
-                PostPreview postPreview = new PostPreview();
-                postPreview.thumbnailURL = p.ThumbnailUrl;
-                postPreview.postId = p.PostId;
+                PostPreview postPreview = new()
+                {
+                    thumbnailURL = p.ThumbnailUrl,
+                    postId = p.PostId
+                };
                 postPreviews.Add(postPreview);
             }
 
@@ -45,9 +47,11 @@ namespace Recipi_API.Services
                                                                                   .Select(pi => pi.Select(pi => pi.Liked == true).Count()))*/
             foreach (Post p in posts)
             {
-                PostPreview postPreview = new();
-                postPreview.thumbnailURL = p.ThumbnailUrl;
-                postPreview.postId = p.PostId;
+                PostPreview postPreview = new()
+                {
+                    thumbnailURL = p.ThumbnailUrl,
+                    postId = p.PostId
+                };
                 postPreviews.Add(postPreview);
             }
             return postPreviews;
@@ -65,9 +69,11 @@ namespace Recipi_API.Services
                                                                                   .Select(pi => pi.Select(pi => pi.Liked == true).Count()))*/
             foreach (Post p in posts)
             {
-                PostPreview postPreview = new();
-                postPreview.thumbnailURL = p.ThumbnailUrl;
-                postPreview.postId = p.PostId;
+                PostPreview postPreview = new()
+                {
+                    thumbnailURL = p.ThumbnailUrl,
+                    postId = p.PostId
+                };
                 postPreviews.Add(postPreview);
             }
             return postPreviews;
@@ -81,9 +87,11 @@ namespace Recipi_API.Services
             List<PostPreview> postPreviews = new();
             foreach (Post p in posts)
             {
-                PostPreview postPreview = new PostPreview();
-                postPreview.thumbnailURL = p.ThumbnailUrl;
-                postPreview.postId = p.PostId;
+                PostPreview postPreview = new()
+                {
+                    thumbnailURL = p.ThumbnailUrl,
+                    postId = p.PostId
+                };
                 postPreviews.Add(postPreview);
             }
             return postPreviews;

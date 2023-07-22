@@ -24,7 +24,6 @@ namespace Recipi_API.Controllers
             _claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost]
         public async Task<ActionResult> PostRecipe(RecipeData recipe)
         {
@@ -68,7 +67,6 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpDelete("{recipeId}")]
         public async Task<ActionResult> DeleteRecipe(int recipeId)
         {
@@ -103,7 +101,6 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPut("{recipeId}")]
         public async Task<ActionResult> PutRecipe(RecipeData recipeData)
         {
@@ -155,7 +152,6 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpGet]
         public async Task<ActionResult> GetUserRecipes(int userId, string? sortBy)
         {
@@ -188,6 +184,7 @@ namespace Recipi_API.Controllers
         }
 
         //No auth here due to the potential of this being called for non-user viewing of posts.
+        [AllowAnonymous]
         [HttpGet("{recipeId}")]
         public async Task<ActionResult> GetRecipeById(int recipeId)
         {
@@ -211,7 +208,7 @@ namespace Recipi_API.Controllers
             }
         }
 
-
+        [AllowAnonymous]
         [HttpGet("{recipeId}/steps")]
         public async Task<ActionResult> GetRecipeSteps(int recipeId)
         {
@@ -235,7 +232,6 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost("{recipeId}/steps")]
         public async Task<ActionResult> PostRecipeStep(RecipeStepData stepData)
         {
@@ -279,6 +275,7 @@ namespace Recipi_API.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("{recipeId}/steps/{stepId}")]
         public async Task<ActionResult> GetRecipeStepById(int stepId)
         {
@@ -302,7 +299,7 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+
         [HttpPut("{recipeId}/steps/{stepId}")]
         public async Task<ActionResult> PutRecipeStep(int stepId, RecipeStepData recipeStepData)
         {
@@ -346,7 +343,7 @@ namespace Recipi_API.Controllers
             }
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+
         [HttpDelete("{recipeId}/steps/{stepId}")]
         public async Task<ActionResult> DeleteRecipeStep(int stepId)
         {

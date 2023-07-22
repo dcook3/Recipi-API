@@ -18,15 +18,16 @@ namespace Recipi_API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly ClaimsIdentity? claims;
-        private readonly UserService userSvc;
+        private readonly IUserService userSvc;
         private readonly IConfiguration configuration;
-        public UsersController(UserService _userSvc, IConfiguration _configuration, IHttpContextAccessor _context)
+        public UsersController(IUserService _userSvc, IConfiguration _configuration, IHttpContextAccessor _context)
         {
             this.claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
             this.userSvc = _userSvc;
             this.configuration = _configuration;
         }
 
+        [AllowAnonymous]
         [HttpPost("Login")]
         public async Task<IActionResult> Login(UserLogin login)
         {
@@ -42,7 +43,7 @@ namespace Recipi_API.Controllers
                 return Unauthorized();
             }
 
-            if (user.UserRoles.Count() != 1)
+            if (user.UserRoles.Count != 1)
             {
                 return StatusCode(500);
             }
@@ -74,6 +75,7 @@ namespace Recipi_API.Controllers
             return Ok(tokenString);
         }
 
+        [AllowAnonymous]
         [HttpPost("Register")]
         public async Task<IActionResult> Register(UserRegistration registration)
         {
@@ -97,135 +99,10 @@ namespace Recipi_API.Controllers
             }
         }
 
-        
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
-        [HttpGet("me")]
-        public async Task<IActionResult> Me()
-        {
-
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
-            {
-                return BadRequest();
-            }
-
-            var user = await userSvc.GetUser(userId);
-
-            if (user == null)
-            {
-                return StatusCode(500);
-            }
-
-            return Ok(new
-            {
-                UserId = user.UserId,
-                Username = user.Username,
-                Email = user.Email,
-                ProfilePicture = user.ProfilePicture,
-                Biography = user.Biography,
-                RegisteredDateTime = user.RegisteredDatetime,
-                Verified = user.Verified
-            });
-        }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
-        [HttpGet("username/{username}")]
-        public async Task<IActionResult> GetUserByUsername(string username)
-        {
-            int selfUserId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out selfUserId))
-            {
-                return BadRequest();
-            }
-
-            User? foundUser = await userSvc.GetUser(username, selfUserId);
-            if(foundUser == null)
-            {
-                return NotFound();
-            }
-
-            var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
-            if ((int)blockStatus > 0)
-            {
-                if (blockStatus == BlockStatus.Blocked)
-                {
-                    return Unauthorized("User has been blocked");
-                }
-                else
-                {
-                    return NotFound();
-                }
-            }
-
-            List<string> combinedRels = new List<string>();
-            combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
-                                       .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
-                                       .ToList();
-
-            return Ok(new
-            {
-                UserId = foundUser.UserId,
-                Username = foundUser.Username,
-                Email = foundUser.Email,
-                ProfilePicture = foundUser.ProfilePicture,
-                Biography = foundUser.Biography,
-                RegisteredDateTime = foundUser.RegisteredDatetime,
-                YourRelationships = combinedRels
-            });
-        }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
-        [HttpGet("id/{userId}")]
-        public async Task<IActionResult> GetUserByUserId(int userId)
-        {
-            int selfUserId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out selfUserId))
-            {
-                return BadRequest();
-            }
-
-            User? foundUser = await userSvc.GetUser(userId, selfUserId);
-            if (foundUser == null)
-            {
-                return NotFound();
-            }
-
-            var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
-            if ((int)blockStatus > 0)
-            {
-                if ((int)blockStatus == 2)
-                {
-                    return Unauthorized("User has been blocked");
-                }
-                else
-                {
-                    return NotFound();
-                }
-            }
-
-            List<string> combinedRels = new List<string>();
-            combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
-                                       .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
-                                       .ToList();
-            return Ok(new
-            {
-                UserId = foundUser.UserId,
-                Username = foundUser.Username,
-                Email = foundUser.Email,
-                ProfilePicture = foundUser.ProfilePicture,
-                Biography = foundUser.Biography,
-                RegisteredDateTime = foundUser.RegisteredDatetime,
-                YourRelationships = combinedRels
-            });
-        }
-  
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPut()]
         public async Task<IActionResult> UpdateProfile(UserProfileUpdate updates)
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -255,13 +132,130 @@ namespace Recipi_API.Controllers
         }
 
 
+        [HttpGet("me")]
+        public async Task<IActionResult> Me()
+        {
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+            {
+                return BadRequest();
+            }
+
+            var user = await userSvc.GetUser(userId);
+
+            if (user == null)
+            {
+                return StatusCode(500);
+            }
+
+            return Ok(new
+            {
+                user.UserId,
+                user.Username,
+                user.Email,
+                user.ProfilePicture,
+                user.Biography,
+                user.RegisteredDatetime,
+                user.Verified
+            });
+        }
+       
+        [HttpGet("username/{username}")]
+        public async Task<IActionResult> GetUserByUsername(string username)
+        {
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
+            {
+                return BadRequest();
+            }
+
+            User? foundUser = await userSvc.GetUser(username, selfUserId);
+            if(foundUser == null)
+            {
+                return NotFound();
+            }
+
+            var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
+            if ((int)blockStatus > 0)
+            {
+                if (blockStatus == BlockStatus.Blocked)
+                {
+                    return Unauthorized("User has been blocked");
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+
+            List<string> combinedRels = new();
+            combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
+                                       .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
+                                       .ToList();
+
+            return Ok(new
+            {
+                foundUser.UserId,
+                foundUser.Username,
+                foundUser.Email,
+                foundUser.ProfilePicture,
+                foundUser.Biography,
+                foundUser.RegisteredDatetime,
+                YourRelationships = combinedRels
+            });
+        }
+        
+        [HttpGet("id/{userId}")]
+        public async Task<IActionResult> GetUserByUserId(int userId)
+        {
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
+            {
+                return BadRequest();
+            }
+
+            User? foundUser = await userSvc.GetUser(userId, selfUserId);
+            if (foundUser == null)
+            {
+                return NotFound();
+            }
+
+            var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
+            if ((int)blockStatus > 0)
+            {
+                if ((int)blockStatus == 2)
+                {
+                    return Unauthorized("User has been blocked");
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+
+            List<string> combinedRels = new();
+            combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
+                                       .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
+                                       .ToList();
+            return Ok(new
+            {
+                foundUser.UserId,
+                foundUser.Username,
+                foundUser.Email,
+                foundUser.ProfilePicture,
+                foundUser.Biography,
+                foundUser.RegisteredDatetime,
+                YourRelationships = combinedRels
+            });
+        }
+        
+        
+
+
+
+        
         [HttpGet("Friend")]
         public async Task<IActionResult> GetFriends()
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -270,20 +264,18 @@ namespace Recipi_API.Controllers
             return Ok(friends.Select(user =>
                 new
                 {
-                    UserId = user.UserId,
-                    Username = user.Username,
-                    Biography = user.Biography,
-                    ProfilePicture = user.ProfilePicture
+                    user.UserId,
+                    user.Username,
+                    user.Biography,
+                    user.ProfilePicture
                 }
             ));
         }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        
         [HttpGet("Friend/Requests")]
         public async Task<IActionResult> GetFriendRequests()
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -292,19 +284,18 @@ namespace Recipi_API.Controllers
             return Ok(friendRequests.Select(user =>
                 new
                 {
-                    UserId = user.UserId,
-                    Username = user.Username,
-                    Biography = user.Biography,
-                    ProfilePicture = user.ProfilePicture
+                    user.UserId,
+                    user.Username,
+                    user.Biography,
+                    user.ProfilePicture
                 }
             ));
         }
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        
         [HttpPost("Friend/Request/{recievingUserId}")]
         public async Task<IActionResult> FriendRequest(int recievingUserId)
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -344,13 +335,11 @@ namespace Recipi_API.Controllers
                 return StatusCode(500);
             }
         }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        
         [HttpPost("Friend/Accept/{recievingUserId}")]
         public async Task<IActionResult> AcceptFriend(int recievingUserId)
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -390,13 +379,11 @@ namespace Recipi_API.Controllers
                 return StatusCode(500);
             }
         }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        
         [HttpDelete("Friend/Deny/{recievingUserId}")]
         public async Task<IActionResult> DenyFriend(int recievingUserId)
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -436,13 +423,11 @@ namespace Recipi_API.Controllers
                 return StatusCode(500);
             }
         }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        
         [HttpDelete("Friend/Remove/{recievingUserId}")]
         public async Task<IActionResult> RemoveFriend(int recievingUserId)
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -483,16 +468,12 @@ namespace Recipi_API.Controllers
             }
         }
 
+
         
-
-
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost("Follow/{recievingUserId}")]
         public async Task<IActionResult> Follow(int recievingUserId)
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -540,13 +521,11 @@ namespace Recipi_API.Controllers
                 return StatusCode(500);
             }
         }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        
         [HttpGet("Followers")]
         public async Task<IActionResult> GetFollowers()
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -556,20 +535,18 @@ namespace Recipi_API.Controllers
             return Ok(followers.Select(user =>
                 new
                 {
-                    UserId = user.UserId,
-                    Username = user.Username,
-                    Biography = user.Biography,
-                    ProfilePicture = user.ProfilePicture
+                    user.UserId,
+                    user.Username,
+                    user.Biography,
+                    user.ProfilePicture
                 }
             ));
         }
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
+        
         [HttpGet("Following")]
         public async Task<IActionResult> GetFollowing()
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -579,21 +556,19 @@ namespace Recipi_API.Controllers
             return Ok(following.Select(user =>
                 new
                 {
-                    UserId = user.UserId,
-                    Username = user.Username,
-                    Biography = user.Biography,
-                    ProfilePicture = user.ProfilePicture
+                    user.UserId,
+                    user.Username,
+                    user.Biography,
+                    user.ProfilePicture
                 }
             ));
         }
+        
 
-
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost("Block/{recievingUserId}")]
         public async Task<IActionResult> Block(int recievingUserId)
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }
@@ -629,13 +604,12 @@ namespace Recipi_API.Controllers
                 return StatusCode(500);
             }
         }
+        
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
         [HttpPost("/BugReport")]
         public async Task<IActionResult> ReportBug(string message)
         {
-            int userId;
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out userId))
+            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
             {
                 return BadRequest();
             }

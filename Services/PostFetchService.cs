@@ -34,10 +34,11 @@ namespace Recipi_API.Services
             return postPreviews;
         }
 
-        public async Task<List<PostPreview>> GetRecommendedPosts(int offset)
+        public async Task<List<PostPreview>> GetRecommendedPosts(int num)
         {
             List<PostPreview> postPreviews = new();
-            List<Post> posts = await context.Posts.OrderByDescending(p => p.PostLikes.Count()).Take(1000).ToListAsync();
+            //increment httpcontext? variable
+            List<Post> posts = await context.Posts.OrderByDescending(p => p.PostedDatetime).Take(num + 10).ToListAsync();
             foreach (Post p in posts)
             {
                 PostPreview postPreview = new();

@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace Recipi_API.Controllers
 {
-
+    [Route("/api/[controller]")]
     [Authorize(Roles = "Admin")]
     public class ModeratorController : ControllerBase
     {

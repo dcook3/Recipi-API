@@ -877,7 +877,7 @@ namespace Recipi_API.Controllers
         }
         
 
-        [HttpPost("/BugReport")]
+        [HttpPost("BugReport")]
         public async Task<IActionResult> ReportBug(string message)
         {
             try

@@ -8,9 +8,9 @@ namespace Recipi_API.Services
     public class PostFetchService : IPostFetchService
     {
         private readonly RecipiDbContext context = new();
-        private readonly UserService userService = new();
+        private readonly IUserService userService;
 
-        public PostFetchService(UserService _userService)
+        public PostFetchService(IUserService _userService)
         {
             userService = _userService;
         }

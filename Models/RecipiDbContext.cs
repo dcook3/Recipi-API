@@ -50,7 +50,17 @@ public partial class RecipiDbContext : DbContext
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Server=recipi-db-mssql.cmnzbcgsvlqu.us-east-2.rds.amazonaws.com,1433;Database=recipi-db;User ID=JDLRecipi;Password=Capstone_2023;Encrypt=True;Connection Timeout=30;TrustServerCertificate=True");
+    {
+        optionsBuilder.UseSqlServer(
+              "Server="   + Environment.GetEnvironmentVariable("DB_SERVER")     + ";"
+            + "Database=" + Environment.GetEnvironmentVariable("DB_PRIMARY_DB") + ";"
+            + "User ID="  + Environment.GetEnvironmentVariable("DB_USER_ID")    + ";"
+            + "Password=" + Environment.GetEnvironmentVariable("DB_USER_PW")    + ";"
+            + "Encrypt=True;"
+            + "Connection Timeout=30;"
+            + "TrustServerCertificate=True"
+        );
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

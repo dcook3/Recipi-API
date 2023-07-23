@@ -26,6 +26,19 @@ namespace Recipi_API.Controllers
             _userService = userService;
         }
 
+        /*
+        [HttpPost]
+        public async Task<IActionResult> CreatePost(PostData post)
+        {
+            if (_claims == null || !int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
+            {
+                return BadRequest();
+            }
+
+
+
+        }
+        */
         [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetRecommendedPosts()

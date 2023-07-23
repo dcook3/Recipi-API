@@ -94,12 +94,12 @@ app.MapControllers()
     .RequireAuthorization(policy =>
     {
         policy
+        .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
         .RequireAuthenticatedUser()
         .RequireClaim("Id")
         .RequireClaim("Username")
         .RequireClaim("Email")
         .RequireClaim(ClaimTypes.Role, new string[] { "User", "Admin" })
-        .RequireAuthenticatedUser()
         .Build();
     });
 

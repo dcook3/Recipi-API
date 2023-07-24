@@ -11,7 +11,6 @@ using Recipi_API.Models.Data_Models;
 
 namespace Recipi_API.Controllers
 {
-    [AllowAnonymous]
     [Route("/api/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]

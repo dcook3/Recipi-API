@@ -37,6 +37,8 @@ public partial class RecipiDbContext : DbContext
 
     public virtual DbSet<RecipeCookbook> RecipeCookbooks { get; set; }
 
+    public virtual DbSet<RecipeRevision> RecipeRevisions { get; set; }
+
     public virtual DbSet<RecipeStep> RecipeSteps { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -50,6 +52,7 @@ public partial class RecipiDbContext : DbContext
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=recipi-db-mssql.cmnzbcgsvlqu.us-east-2.rds.amazonaws.com,1433;Database=recipi-db;User ID=JDLRecipi;Password=Capstone_2023;Encrypt=True;Connection Timeout=30;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -156,6 +159,10 @@ public partial class RecipiDbContext : DbContext
                 .HasMaxLength(2043)
                 .HasColumnName("thumbnail_url");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Recipe).WithMany(p => p.Posts)
+                .HasForeignKey(d => d.RecipeId)
+                .HasConstraintName("FK_Posts_Recipes");
         });
 
         modelBuilder.Entity<PostComment>(entity =>
@@ -216,6 +223,9 @@ public partial class RecipiDbContext : DbContext
                 .HasColumnName("media_url");
             entity.Property(e => e.PostId).HasColumnName("post_id");
             entity.Property(e => e.StepId).HasColumnName("step_id");
+            entity.Property(e => e.ThumbnailUrl)
+                .HasMaxLength(2043)
+                .HasColumnName("thumbnail_url");
 
             entity.HasOne(d => d.Post).WithMany(p => p.PostMediaNavigation)
                 .HasForeignKey(d => d.PostId)
@@ -267,7 +277,6 @@ public partial class RecipiDbContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.Recipes)
                 .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Recipes_Users");
         });
 
@@ -289,6 +298,29 @@ public partial class RecipiDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_RecipeCookbook_Users");
+        });
+
+        modelBuilder.Entity<RecipeRevision>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("RecipeRevision");
+
+            entity.Property(e => e.NewRecipeId).HasColumnName("new_recipe_id");
+            entity.Property(e => e.OldRecipeId).HasColumnName("old_recipe_id");
+            entity.Property(e => e.Revision)
+                .HasMaxLength(1000)
+                .HasColumnName("revision");
+
+            entity.HasOne(d => d.NewRecipe).WithMany()
+                .HasForeignKey(d => d.NewRecipeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_RecipeRevision_Recipes1");
+
+            entity.HasOne(d => d.OldRecipe).WithMany()
+                .HasForeignKey(d => d.OldRecipeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_RecipeRevision_Recipes");
         });
 
         modelBuilder.Entity<RecipeStep>(entity =>
@@ -327,6 +359,9 @@ public partial class RecipiDbContext : DbContext
             entity.Property(e => e.IngredientMeasurementValue)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("ingredient_measurement_value");
+            entity.Property(e => e.StepIngredientId)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("step_ingredient_id");
 
             entity.HasOne(d => d.Ingredient).WithMany(p => p.StepIngredients)
                 .HasForeignKey(d => d.IngredientId)

@@ -5,6 +5,8 @@ namespace Recipi_API.Models;
 
 public partial class StepIngredient
 {
+    public int StepIngredientId { get; set; }
+
     public int StepId { get; set; }
 
     public int IngredientId { get; set; }

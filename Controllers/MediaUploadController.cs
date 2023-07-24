@@ -5,9 +5,9 @@ using System.Security.Claims;
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Recipi_API.Models.Data_Models;
 using Recipi_API.Models;
 using Recipi_API.Services;
+using Recipi_API.Models.Data_Models;
 
 namespace Recipi_API.Controllers
 {
@@ -17,10 +17,7 @@ namespace Recipi_API.Controllers
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
     public class MediaUploadController : ControllerBase
     {
-        private readonly IPostInteractionsService _interactionsService;
-        private readonly IPostFetchService _fetchService;
         private readonly ClaimsIdentity? _claims;
-        private readonly IUserService _userService;
 
         private readonly string AWS_ACCESS_KEY_ID;
         private readonly string AWS_SECRET_ACCESS_KEY;
@@ -30,12 +27,9 @@ namespace Recipi_API.Controllers
         private readonly RegionEndpoint? bucketRegion;
         private readonly AmazonS3Client client;
 
-        public MediaUploadController(IPostInteractionsService service, IPostFetchService fetchService, IHttpContextAccessor _context, IUserService userService)
+        public MediaUploadController(IHttpContextAccessor _context)
         {
-            _interactionsService = service;
-            _fetchService = fetchService;
             _claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
-            _userService = userService;
 
             bucketName = "recipi-pwa-storage";
             key = Guid.NewGuid().ToString() + ".txt";

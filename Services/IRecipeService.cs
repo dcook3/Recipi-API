@@ -16,14 +16,14 @@ namespace Recipi_API.Services
         public Task<bool> CreateRecipe(Recipe recipe);
         public Task<bool> AddRecipeStep(RecipeStep step);
         public Task<bool> AddStepIngredient(StepIngredient stepIngredient);
-        public Task<Recipe> CreateRecipe(int userId, RecipeData recipe);
-        public Task<int> CreateRecipeRevision(int oldRecipeId, int newRecipeId);
+        public Task<bool> CreateRecipeRevision(int oldRecipeId, int newRecipeId);
         public Task<int> UpdateRecipe(Recipe recipe);
         public Task<int> DeleteRecipe(Recipe recipe);
         public Task<int> CreateRecipeStep(RecipeStep step);
         public Task<int> UpdateRecipeStep(RecipeStep step);
         public Task<int> DeleteRecipeStep(RecipeStep step);
-        public Task<bool> CheckRecipeUsed(int recipeId);
+        public Task<bool> DeleteRecipeSteps(ICollection<RecipeStep> recipeSteps);
+        public Task<bool> CheckRecipeUsed(Recipe recipe);
         
         public Task<int> CreateRecipeStepIngredient(StepIngredient stepIngredient);
         public Task<int> PutRecipeStepIngredient(StepIngredient stepIngredient);

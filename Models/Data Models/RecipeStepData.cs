@@ -1,11 +1,16 @@
-﻿namespace Recipi_API.Models.Data_Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Recipi_API.Models.Data_Models
 {
     public class RecipeStepData
     {
+        [Required]
         public string StepDescription { get; set; } = null!;
 
+        [Required]
         public short StepOrder { get; set; }
 
-        public virtual List<StepIngredientData> StepIngredients { get; set; } = new List<StepIngredientData>()!;
+        [ValidateList<StepIngredientData>]
+        public virtual ICollection<StepIngredientData> StepIngredients { get; set; } = new List<StepIngredientData>()!;
     }
 }

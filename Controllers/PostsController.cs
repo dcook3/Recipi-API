@@ -57,7 +57,7 @@ namespace Recipi_API.Controllers
                     }
                     if(postRecipe.RecipeSteps.Count == postData.PostMediaList.Count)
                     {
-                        for (int i = 0; i < postRecipe.RecipeSteps.Count - 1; i++)
+                        for (int i = 0; i < postRecipe.RecipeSteps.Count; i++)
                         {
                             RecipeStep rs = postRecipe.RecipeSteps.ElementAt(i);
                             PostMediaData? md = postData.PostMediaList.Where(pm => pm.StepId == rs.StepId).FirstOrDefault();
@@ -113,7 +113,7 @@ namespace Recipi_API.Controllers
 
                 if (await _postService.CreatePost(post))
                 {
-                    return Ok();
+                    return Ok(new { post.PostId });
                 }
                 return StatusCode(500);
             }
@@ -326,7 +326,43 @@ namespace Recipi_API.Controllers
             }
         }
 
+        
+        [HttpGet("user/me")]
+        public async Task<IActionResult> GetUserPosts()
+        {
+            try
+            {
+                if (_claims == null || !int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
+                {
+                    return BadRequest();
+                }
 
+                List<PostPreview> posts = await _fetchService.GetUserPosts(currentId);
+                if (posts != null && posts.Count > 0)
+                {
+                    return Ok(posts);
+                }
+                else
+                {
+                    return StatusCode(500, "There was a problem with your request. Please try again.");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
+        }
         [AllowAnonymous]
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetUserPosts(int userId)
@@ -374,8 +410,70 @@ namespace Recipi_API.Controllers
                         //only create post interaction if user is logged in
                         await _interactionsService.CreatePostInteraction(postId, currentId);
                     }
+                    object? recipeData = null;
+                    string? postMedia = null;
+                    string? postThumbnail = null;
+                    if(post.Recipe == null)
+                    {
+                        postMedia = post.PostMedia;
+                        postThumbnail = post.ThumbnailUrl;
+                    }
+                    else
+                    {
+                        recipeData = new
+                        {
+                            post.Recipe.RecipeId,
+                            post.Recipe.RecipeTitle,
+                            post.Recipe.RecipeDescription,
+                            User = new
+                            {
+                                post.Recipe.User.UserId,
+                                post.Recipe.User.Username
+                            },
+                            post.Recipe.CreatedDatetime,
+                            RecipeSteps = post.Recipe.RecipeSteps.Select(rs => new
+                            {
+                                rs.StepId,
+                                rs.StepDescription,
+                                rs.StepOrder,
+                                PostMedia = new
+                                {
+                                    rs.PostMedia.FirstOrDefault().PostMediaId,
+                                    rs.PostMedia.FirstOrDefault().MediaUrl,
+                                    rs.PostMedia.FirstOrDefault().ThumbnailUrl
+                                },
+                                StepIngredients = rs.StepIngredients.Select(si => new
+                                {
+                                    si.StepIngredientId,
+                                    Ingredient = new 
+                                    {
+                                        si.Ingredient.IngredientId,
+                                        si.Ingredient.IngredientDescription,
+                                        si.Ingredient.IngredientTitle,
+                                        si.Ingredient.IngredientIcon
+                                    },
+                                    si.IngredientMeasurementValue,
+                                    si.IngredientMeasurementUnit
+                                })
+                            })
+                        };
+                    }
 
-                    return Ok(post);
+                    return Ok(new
+                    {
+                        post.PostId,
+                        post.PostTitle,
+                        post.PostDescription,
+                        PostMedia = postMedia,
+                        PostThumbnail = postThumbnail,
+                        User = new
+                        {
+                            post.User.UserId,
+                            post.User.Username
+                        },
+                        Recipe = recipeData
+
+                    });
                 }
                 else
                 {

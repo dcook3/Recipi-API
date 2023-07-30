@@ -30,4 +30,6 @@ public partial class Post
     public virtual ICollection<PostReport> PostReports { get; set; } = new List<PostReport>();
 
     public virtual Recipe? Recipe { get; set; }
+
+    public virtual User User { get; set; } = null!;
 }

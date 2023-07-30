@@ -27,54 +27,7 @@ namespace Recipi_API.Services
             return res == 1;
         }
 
-        public async Task<Recipe> CreateRecipe(int userId, RecipeData recipe)
-        {
-            Recipe r = new()
-            {
-                RecipeDescription = recipe.RecipeDescription,
-                RecipeTitle = recipe.RecipeTitle,
-                CreatedDatetime = DateTime.Now,
-                UserId = userId
-            };
-
-            context.Recipes.Add(r);
-            
-            int changeCount = await context.SaveChangesAsync();
-
-            int countCheck = 1;
-            for (int si = 0; si < recipe.RecipeSteps.Count; si++)
-            {
-                
-                RecipeStepData stepData = recipe.RecipeSteps.ElementAt(si);
-                RecipeStep step = new()
-                {
-                    StepDescription = stepData.StepDescription,
-                    StepOrder = stepData.StepOrder,
-                    RecipeId = r.RecipeId
-                };
-                r.RecipeSteps.Add(step);
-                await context.SaveChangesAsync();
-                countCheck++;
-                for (int ii = 0; ii < stepData.StepIngredients.Count; ii++)
-                {
-                    StepIngredientData ingData = stepData.StepIngredients.ElementAt(ii);
-                    StepIngredient stepIng = new()
-                    {
-                        IngredientId = ingData.IngredientId,
-                        IngredientMeasurementUnit = ingData.IngredientMeasurementUnit,
-                        IngredientMeasurementValue = ingData.IngredientMeasurementValue
-                    };
-                    step.StepIngredients.Add(stepIng);
-                    await context.SaveChangesAsync();
-                    countCheck++;
-                }
-            }
-
-            return r;
-
-        }
-
-        public async Task<int> CreateRecipeRevision(int oldRecipeId, int newRecipeId)
+        public async Task<bool> CreateRecipeRevision(int oldRecipeId, int newRecipeId)
         {
             context.RecipeRevisions.Add(new()
             {
@@ -82,7 +35,8 @@ namespace Recipi_API.Services
                 NewRecipeId = newRecipeId,
                 Revision = "Recipe Updated"
             });
-            return await context.SaveChangesAsync();
+            var res = await context.SaveChangesAsync();
+            return res == 1;
         }
         
         public async Task<int> UpdateRecipe(Recipe recipe)
@@ -99,12 +53,16 @@ namespace Recipi_API.Services
 
         public async Task<RecipeStep?> GetRecipeStepById(int stepId)
         {
-            return await context.RecipeSteps.FindAsync(stepId);
+            return await context.RecipeSteps.Where(rs => rs.StepId == stepId)
+                                            .Include(rs => rs.StepIngredients)
+                                            .FirstOrDefaultAsync();
         }
 
         public async Task<List<RecipeStep>> GetRecipeStepsByRecipeId(int recipeId)
         {
-            return await context.RecipeSteps.Where(rs => rs.RecipeId == recipeId).ToListAsync();
+            return await context.RecipeSteps.Where(rs => rs.RecipeId == recipeId)
+                                            .Include(rs => rs.StepIngredients)
+                                            .ToListAsync();
         }
 
         public async Task<int> CreateRecipeStep(RecipeStep recipeStep)
@@ -124,7 +82,12 @@ namespace Recipi_API.Services
             context.RecipeSteps.Remove(recipeStep);
             return await context.SaveChangesAsync();
         }
-
+        public async Task<bool> DeleteRecipeSteps(ICollection<RecipeStep> recipeSteps)
+        {
+            context.RecipeSteps.RemoveRange(recipeSteps);
+            var res = await context.SaveChangesAsync();
+            return res == recipeSteps.Count();
+        }
         public async Task<Recipe?> GetRecipeById(int recipeId)
         {
             return await context.Recipes.Where(r => r.RecipeId == recipeId)
@@ -198,10 +161,11 @@ namespace Recipi_API.Services
                                         .ToListAsync();
         }
 
-        public async Task<bool> CheckRecipeUsed(int recipeId)
+        public async Task<bool> CheckRecipeUsed(Recipe recipe)
         {
-            return await context.Posts.AnyAsync(p => p.RecipeId == recipeId) 
-                || await context.RecipeCookbooks.AnyAsync(rc => rc.RecipeId == recipeId);
+            return await context.Posts.AnyAsync(p => p.RecipeId == recipe.RecipeId)
+                || await context.RecipeCookbooks.AnyAsync(rc => rc.UserId != recipe.UserId && rc.RecipeId == recipe.RecipeId)
+                || await context.RecipeRevisions.AnyAsync(rv => rv.OldRecipeId== recipe.RecipeId);
         }
         public async Task<int> CreateRecipeStepIngredient(StepIngredient stepIngredient)
         {

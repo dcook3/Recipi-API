@@ -11,7 +11,6 @@ namespace Recipi_API.Services
 
         public async Task<bool> CreatePost(Post post)
         {
-            Post post = new Post();
             db.Posts.Add(post);
             var res = await db.SaveChangesAsync();
             return res > 0;

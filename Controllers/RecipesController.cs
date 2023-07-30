@@ -33,8 +33,8 @@ namespace Recipi_API.Controllers
         [HttpPost]
         public async Task<ActionResult> PostRecipe(RecipeData recipe)
         {
-            //try
-            //{
+            try
+            {
                 if (_claims == null || !int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
                     return BadRequest("You must be logged in to post a recipe.");
@@ -48,13 +48,6 @@ namespace Recipi_API.Controllers
                     UserId = currentId
                 };
 
-                if (!await _recipeService.CreateRecipe(r))
-                {
-                    return StatusCode(500, "Error creating recipe");
-                }
-
-                List<RecipeStep> steps = new();
-                List<StepIngredient> stepIngredients = new();
                 for (int si = 0; si < recipe.RecipeSteps.Count; si++)
                 {
                     RecipeStepData stepData = recipe.RecipeSteps.ElementAt(si);
@@ -65,44 +58,28 @@ namespace Recipi_API.Controllers
                         StepIngredients = new List<StepIngredient>(),
                         RecipeId = r.RecipeId
                     };
-
-                    if (!await _recipeService.AddRecipeStep(step))
-                    {
-                        return StatusCode(500, "Error adding recipe steps");
-                    }
-
+                    
                     for (int ii = 0; ii < stepData.StepIngredients.Count; ii++)
                     {
                         StepIngredientData ingData = stepData.StepIngredients.ElementAt(ii);
 
-                        StepIngredient stepIngredient = new()
+                        step.StepIngredients.Add(new()
                         {
                             IngredientId = ingData.IngredientId,
                             IngredientMeasurementUnit = ingData.IngredientMeasurementUnit,
                             IngredientMeasurementValue = ingData.IngredientMeasurementValue,
                             StepId = step.StepId
-                        };
-                        if (!await _recipeService.AddStepIngredient(stepIngredient))
-                        {
-                            return StatusCode(500, "Error adding step ingredients");
-                        }
+                        });
                     }
-                    
+                    r.RecipeSteps.Add(step);
                 }
 
-                
-                if(!await _recipeService.AddRecipeToCookbook(currentId, r))
-                {
-                    return StatusCode(500, "Recipe Created but failed to add to your cookbook");
-                }
-                return Ok(r);
-                //Recipe r = await _recipeService.CreateRecipe(currentId, recipe);
-                if (r.RecipeId > 0)
+                if (await _recipeService.CreateRecipe(r))
                 {
                     if (await _recipeService.AddRecipeToCookbook(currentId, r))
                     {
 
-                        return Ok(r);
+                        return Ok(new { r.RecipeId });
                     }
                     else
                     {
@@ -113,7 +90,6 @@ namespace Recipi_API.Controllers
                 {
                     return StatusCode(500, "Error creating recipe.");
                 }
-                try { 
             }
             catch (Exception ex)
             {
@@ -201,8 +177,8 @@ namespace Recipi_API.Controllers
                         return Unauthorized("You do not have access to delete this recipe");
                     }
 
-                    if (await _recipeService.CheckRecipeUsed(recipeId))
-                        return Conflict("Recipe is being used in other posts, you can dissociate yourself with the recipe or contact an adminstrator to forcefully remove the recipe with valid reasoning.");
+                    if (await _recipeService.CheckRecipeUsed(r))
+                        return Conflict("Recipe is being used in other posts or recipe revisions, you can dissociate yourself with the recipe or contact an adminstrator to forcefully remove the recipe with valid reasoning.");
                     int numRows = await _recipeService.DeleteRecipe(r);
                     if (numRows > 0)
                     {
@@ -237,7 +213,7 @@ namespace Recipi_API.Controllers
         }
 
         [HttpPut("{recipeId}")]
-        public async Task<ActionResult> PutRecipe(int recipeId, RecipeData recipeData)
+        public async Task<ActionResult> PutRecipe(int recipeId, RecipeUpdateData recipeData)
         {
             try
             {
@@ -247,7 +223,11 @@ namespace Recipi_API.Controllers
                 }
 
                 Recipe? oldRecipe = await _recipeService.GetRecipeById(recipeId);
-                if (oldRecipe != null)
+                if (oldRecipe == null)
+                {
+                    return NotFound("Recipe does not exist.");
+                }
+                if (await _recipeService.CheckRecipeUsed(oldRecipe))
                 {
                     Recipe newRecipe = new()
                     {
@@ -274,61 +254,133 @@ namespace Recipi_API.Controllers
                         newRecipe.RecipeDescription = oldRecipe.RecipeDescription;
                     }
 
-
-                    for (int si = 0; si < recipeData.RecipeSteps.Count; si++)
+                    if (recipeData.RecipeSteps.Count > 0)
                     {
-                        RecipeStepData stepData = recipeData.RecipeSteps.ElementAt(si);
-                        RecipeStep step = new()
+                        for (int si = 0; si < recipeData.RecipeSteps.Count; si++)
                         {
-                            StepDescription = stepData.StepDescription,
-                            StepOrder = stepData.StepOrder,
-                            StepIngredients = new List<StepIngredient>()
-                        };
-                        for (int ii = 0; ii < stepData.StepIngredients.Count; ii++)
-                        {
-                            StepIngredientData ingData = stepData.StepIngredients.ElementAt(ii);
-                            if (!await _ingService.CheckIngredient(ingData.IngredientId))
+                            RecipeStepData stepData = recipeData.RecipeSteps.ElementAt(si);
+                            RecipeStep step = new()
                             {
-                                return BadRequest("Ingredient does not exist");
+                                StepDescription = stepData.StepDescription,
+                                StepOrder = stepData.StepOrder,
+                                StepIngredients = new List<StepIngredient>()
+                            };
+                            for (int ii = 0; ii < stepData.StepIngredients.Count; ii++)
+                            {
+                                StepIngredientData ingData = stepData.StepIngredients.ElementAt(ii);
+
+                                step.StepIngredients.Add(new()
+                                {
+                                    IngredientId = ingData.IngredientId,
+                                    IngredientMeasurementUnit = ingData.IngredientMeasurementUnit,
+                                    IngredientMeasurementValue = ingData.IngredientMeasurementValue
+                                });
                             }
-                            step.StepIngredients.Add(new()
-                            {
-                                IngredientId = ingData.IngredientId,
-                                IngredientMeasurementUnit = ingData.IngredientMeasurementUnit,
-                                IngredientMeasurementValue = ingData.IngredientMeasurementValue
-                            });
+                            newRecipe.RecipeSteps.Add(step);
                         }
-                        newRecipe.RecipeSteps.Add(step);
+                    }
+                    else
+                    {
+                        for (int si = 0; si < oldRecipe.RecipeSteps.Count; si++)
+                        {
+                            RecipeStep oldStep = oldRecipe.RecipeSteps.ElementAt(si);
+                            RecipeStep step = new()
+                            {
+                                StepDescription = oldStep.StepDescription,
+                                StepOrder = oldStep.StepOrder,
+                                StepIngredients = new List<StepIngredient>()
+                            };
+                            for (int ii = 0; ii < oldStep.StepIngredients.Count; ii++)
+                            {
+                                StepIngredient oldStepIngredient = oldStep.StepIngredients.ElementAt(ii);
+
+                                step.StepIngredients.Add(new()
+                                {
+                                    IngredientId = oldStepIngredient.IngredientId,
+                                    IngredientMeasurementUnit = oldStepIngredient.IngredientMeasurementUnit,
+                                    IngredientMeasurementValue = oldStepIngredient.IngredientMeasurementValue
+                                });
+                            }
+                            newRecipe.RecipeSteps.Add(step);
+                        }
                     }
 
                     //Consider adding updated field to our data models. For now i will treat created fields as this.
 
 
-
-
-
-                    int numRows = 0;// await _recipeService.CreateRecipe(newRecipe);
-                    numRows += await _recipeService.CreateRecipeRevision(oldRecipe.RecipeId, newRecipe.RecipeId);
-                    if (numRows > 1)
+                    if (await _recipeService.CreateRecipe(newRecipe))
                     {
+                        if (await _recipeService.CreateRecipeRevision(oldRecipe.RecipeId, newRecipe.RecipeId))
+                        {
+                            if (await _recipeService.AddRecipeToCookbook(currentId, newRecipe))
+                            {
+
+                                return Ok(new { RevisedRecipeId = newRecipe.RecipeId});
+                            }
+                            else
+                            {
+                                return StatusCode(500, new { Message = "New Recipe Created but failed to add to your cookbook", RevisedRecipeId = newRecipe.RecipeId });
+                            }
+                        }
                         if (await _recipeService.AddRecipeToCookbook(currentId, newRecipe))
                         {
 
-                            return Ok(newRecipe);
+                            return StatusCode(500, new { Message = "New Recipe Created but failed to link to old recipe", RevisedRecipeId = newRecipe.RecipeId });
                         }
                         else
                         {
-                            return StatusCode(500, "New Recipe Created but faild to add to your cookbook");
+                            return StatusCode(500, new { Message = "New Recipe Created but failed to add to your cookbook and link to old recipe", RevisedRecipeId = newRecipe.RecipeId });
                         }
                     }
-
                     return StatusCode(500, "There was an error creating revision of recipe");
                 }
                 else
                 {
-                    return NotFound("Recipe does not exist.");
-                }
+                    if (!recipeData.RecipeTitle.IsNullOrEmpty())
+                    {
+                        oldRecipe.RecipeTitle = recipeData.RecipeTitle;
+                    }
 
+                    if (!recipeData.RecipeDescription.IsNullOrEmpty())
+                    {
+                        oldRecipe.RecipeDescription = recipeData.RecipeDescription;
+                    }
+
+                    if (recipeData.RecipeSteps.Count > 0)
+                    {
+                        await _recipeService.DeleteRecipeSteps(oldRecipe.RecipeSteps);
+                        oldRecipe.RecipeSteps.Clear();
+                        for (int si = 0; si < recipeData.RecipeSteps.Count; si++)
+                        {
+                            RecipeStepData stepData = recipeData.RecipeSteps.ElementAt(si);
+                            RecipeStep step = new()
+                            {
+                                StepDescription = stepData.StepDescription,
+                                StepOrder = stepData.StepOrder,
+                                StepIngredients = new List<StepIngredient>()
+                            };
+                            for (int ii = 0; ii < stepData.StepIngredients.Count; ii++)
+                            {
+                                StepIngredientData ingData = stepData.StepIngredients.ElementAt(ii);
+
+                                step.StepIngredients.Add(new()
+                                {
+                                    IngredientId = ingData.IngredientId,
+                                    IngredientMeasurementUnit = ingData.IngredientMeasurementUnit,
+                                    IngredientMeasurementValue = ingData.IngredientMeasurementValue
+                                });
+                            }
+                            oldRecipe.RecipeSteps.Add(step);
+                        }
+                    }
+
+                    var res = await _recipeService.UpdateRecipe(oldRecipe);
+                    if(res > 0)
+                    {
+                        return Ok(new { UpdatedRecipeId = oldRecipe.RecipeId });
+                    }
+                    return StatusCode(500, "There was an issue updating the recipe");
+                }
             }
             catch (Exception ex)
             {
@@ -367,11 +419,15 @@ namespace Recipi_API.Controllers
                      recipes = await _recipeService.GetRecipeCookbook(currentId);
                 }
 
-                if (recipes.Count > 0)
+                return Ok(recipes.Select(r => new
                 {
-                    return Ok(recipes);
-                }
-                return NotFound();
+                    r.RecipeId,
+                    r.RecipeTitle,
+                    r.RecipeDescription,
+                    r.UserId,
+                    r.CreatedDatetime
+
+                }));
             }
             catch (Exception ex)
             {
@@ -536,11 +592,28 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                List<RecipeStep> r = await _recipeService.GetRecipeStepsByRecipeId(recipeId);
+                List<RecipeStep> steps = await _recipeService.GetRecipeStepsByRecipeId(recipeId);
 
-                if (r != null)
+                if (steps != null)
                 {
-                    return Ok(r);
+                    return Ok(steps.Select(rs => new
+                    {
+                        rs.StepId,
+                        rs.StepDescription,
+                        rs.StepOrder,
+                        StepIngredients = rs.StepIngredients.Select(si => new
+                        {
+                            si.StepIngredientId,
+                            si.IngredientMeasurementUnit,
+                            si.IngredientMeasurementValue,
+                            Ingredient = new
+                            {
+                                si.Ingredient.IngredientTitle,
+                                si.Ingredient.IngredientDescription,
+                                si.Ingredient.IngredientIcon
+                            }
+                        })
+                    }));
                 }
                 return NotFound();
             }
@@ -570,11 +643,28 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                RecipeStep? step = await _recipeService.GetRecipeStepById(stepId);
+                RecipeStep? rs = await _recipeService.GetRecipeStepById(stepId);
 
-                if (step != null)
+                if (rs != null)
                 {
-                    return Ok(step);
+                    return Ok(new
+                    {
+                        rs.StepId,
+                        rs.StepDescription,
+                        rs.StepOrder,
+                        StepIngredients = rs.StepIngredients.Select(si => new
+                        {
+                            si.StepIngredientId,
+                            si.IngredientMeasurementUnit,
+                            si.IngredientMeasurementValue,
+                            Ingredient = new
+                            {
+                                si.Ingredient.IngredientTitle,
+                                si.Ingredient.IngredientDescription,
+                                si.Ingredient.IngredientIcon
+                            }
+                        })
+                    });
                 }
                 return NotFound();
             }

@@ -163,6 +163,11 @@ public partial class RecipiDbContext : DbContext
             entity.HasOne(d => d.Recipe).WithMany(p => p.Posts)
                 .HasForeignKey(d => d.RecipeId)
                 .HasConstraintName("FK_Posts_Recipes");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Posts)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Posts_Users");
         });
 
         modelBuilder.Entity<PostComment>(entity =>
@@ -302,22 +307,22 @@ public partial class RecipiDbContext : DbContext
 
         modelBuilder.Entity<RecipeRevision>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("RecipeRevision");
+            entity.HasKey(e => e.RevisionId);
 
+            entity.ToTable("RecipeRevision");
+
+            entity.Property(e => e.RevisionId).HasColumnName("revision_id");
             entity.Property(e => e.NewRecipeId).HasColumnName("new_recipe_id");
             entity.Property(e => e.OldRecipeId).HasColumnName("old_recipe_id");
             entity.Property(e => e.Revision)
                 .HasMaxLength(1000)
                 .HasColumnName("revision");
 
-            entity.HasOne(d => d.NewRecipe).WithMany()
+            entity.HasOne(d => d.NewRecipe).WithMany(p => p.RecipeRevisionNewRecipes)
                 .HasForeignKey(d => d.NewRecipeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_RecipeRevision_Recipes1");
 
-            entity.HasOne(d => d.OldRecipe).WithMany()
+            entity.HasOne(d => d.OldRecipe).WithMany(p => p.RecipeRevisionOldRecipes)
                 .HasForeignKey(d => d.OldRecipeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_RecipeRevision_Recipes");
@@ -349,9 +354,9 @@ public partial class RecipiDbContext : DbContext
 
         modelBuilder.Entity<StepIngredient>(entity =>
         {
-            entity.HasKey(e => new { e.StepId, e.IngredientId });
+            entity.HasKey(e => e.StepIngredientId).HasName("PK_StepIngredients_1");
 
-            entity.Property(e => e.StepId).HasColumnName("step_id");
+            entity.Property(e => e.StepIngredientId).HasColumnName("step_ingredient_id");
             entity.Property(e => e.IngredientId).HasColumnName("ingredient_id");
             entity.Property(e => e.IngredientMeasurementUnit)
                 .HasMaxLength(10)
@@ -359,9 +364,7 @@ public partial class RecipiDbContext : DbContext
             entity.Property(e => e.IngredientMeasurementValue)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("ingredient_measurement_value");
-            entity.Property(e => e.StepIngredientId)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("step_ingredient_id");
+            entity.Property(e => e.StepId).HasColumnName("step_id");
 
             entity.HasOne(d => d.Ingredient).WithMany(p => p.StepIngredients)
                 .HasForeignKey(d => d.IngredientId)

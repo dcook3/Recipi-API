@@ -23,5 +23,9 @@ namespace Recipi_API.Services
         {
             return await context.Ingredients.FindAsync(ingId);
         }
+        public async Task<bool> CheckIngredient(int ingId)
+        {
+            return await context.Ingredients.AnyAsync(i => i.IngredientId == ingId);
+        }
     }
 }

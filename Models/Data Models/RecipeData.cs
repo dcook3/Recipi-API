@@ -1,18 +1,17 @@
-﻿using System;
+﻿using Recipi_API.Models.Data_Models;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Recipi_API.Models;
 
 public partial class RecipeData
 {
-    public int RecipeId { get; set; }
+    [Required]
     public string RecipeTitle { get; set; } = null!;
 
     public string? RecipeDescription { get; set; }
 
-    public int UserId { get; set; }
-
-    public DateTime CreatedDatetime { get; set; }
-
-    public List<RecipeStep> RecipeSteps { get; set; } = new List<RecipeStep>();
+    [ValidateList<RecipeStepData>]
+    public List<RecipeStepData> RecipeSteps { get; set; } = new()!;
 }

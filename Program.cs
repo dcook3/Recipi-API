@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Recipi_API.Models;
+using Recipi_API.Models.Data_Models;
 using Recipi_API.Services;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +32,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 builder.Services.AddAuthentication();
 
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(x => 
+    x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -65,6 +69,7 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddSingleton<IModeratorService, ModeratorService>();
 builder.Services.AddSingleton<IPostInteractionsService, PostInteractionsService>();
+builder.Services.AddSingleton<IPostService, PostService>();
 builder.Services.AddSingleton<IPostFetchService, PostFetchService>();
 builder.Services.AddSingleton<IRecipeService, RecipeService>();
 builder.Services.AddSingleton<IIngredientsService, IngredientsService>();

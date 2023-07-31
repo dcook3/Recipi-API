@@ -79,11 +79,21 @@ namespace Recipi_API.Services
             return postPreviews;
         }
 
-        public async Task<Post?> GetSinglePost(int postId) => await context.Posts.FindAsync(postId);
+        public async Task<Post?> GetSinglePost(int postId) => await context.Posts.Where(p => p.PostId == postId)
+                                                                                 .Include(p => p.User)
+                                                                                 .Include(p => p.Recipe)
+                                                                                    .ThenInclude(r => r!.RecipeSteps)
+                                                                                        .ThenInclude(rs => rs.PostMedia)
+                                                                                 .Include(p => p.Recipe)
+                                                                                    .ThenInclude(r => r!.RecipeSteps)
+                                                                                        .ThenInclude(rs => rs.StepIngredients)
+                                                                                            .ThenInclude(si => si.Ingredient)
+                                                                                 .FirstOrDefaultAsync();
 
         public async Task<List<PostPreview>> GetUserPosts(int userId)
         {
             List<Post> posts = await context.Posts.Where(p => p.UserId == userId).ToListAsync();
+                                                    
             List<PostPreview> postPreviews = new();
             foreach (Post p in posts)
             {

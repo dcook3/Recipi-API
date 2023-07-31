@@ -37,6 +37,8 @@ public partial class User
 
     public virtual ICollection<PostReport> PostReports { get; set; } = new List<PostReport>();
 
+    public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
+
     public virtual ICollection<RecipeCookbook> RecipeCookbooks { get; set; } = new List<RecipeCookbook>();
 
     public virtual ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();

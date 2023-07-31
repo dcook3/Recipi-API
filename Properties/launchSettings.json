@@ -6,9 +6,6 @@
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-<<<<<<< Updated upstream
-        "ASPNETCORE_HOST_ENVIRONMENT": "Local"
-=======
         "ASPNETCORE_HOST_ENVIRONMENT": "Local",
         "AWS_ACCESS_KEY_ID": "AKIAYJZFYZYSVR24GFEL",
         "AWS_SECRET_ACCESS_KEY": "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",
@@ -16,7 +13,6 @@
         "D_PRIMARY_DB": "recipi-db",
         "DB_USER_ID": "JDLRecipi",
         "DB_USER_PW": "Capstone_2023"
->>>>>>> Stashed changes
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5232"
@@ -27,9 +23,6 @@
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-<<<<<<< Updated upstream
-        "ASPNETCORE_HOST_ENVIRONMENT": "local"
-=======
         "ASPNETCORE_HOST_ENVIRONMENT": "local",
         "AWS_ACCESS_KEY_ID": "AKIAYJZFYZYSVR24GFEL",
         "AWS_SECRET_ACCESS_KEY": "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",
@@ -37,7 +30,6 @@
         "DB_PRIMARY_DB": "recipi-db",
         "DB_USER_ID": "JDLRecipi",
         "DB_USER_PW": "Capstone_2023"
->>>>>>> Stashed changes
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7223;http://localhost:5232"
@@ -55,9 +47,6 @@
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/swagger",
       "publishAllPorts": true,
-<<<<<<< Updated upstream
-      "useSSL": true
-=======
       "useSSL": true,
       "AWS_ACCESS_KEY_ID": "AKIAYJZFYZYSVR24GFEL",
       "AWS_SECRET_ACCESS_KEY": "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",
@@ -65,7 +54,6 @@
       "DB_PRIMARY_DB": "recipi-db",
       "DB_USER_ID": "JDLRecipi",
       "DB_USER_PW": "Capstone_2023"
->>>>>>> Stashed changes
     }
   },
   "$schema": "https://json.schemastore.org/launchsettings.json",

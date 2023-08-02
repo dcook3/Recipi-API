@@ -1,4 +1,5 @@
 ﻿using Recipi_API.Models;
+using Recipi_API.Models.Data_Models;
 
 namespace Recipi_API.Services
 {
@@ -14,6 +15,7 @@ namespace Recipi_API.Services
         Task<bool> CreateBugReport(int userId, string message);
         Task<bool> CreateUser(UserRegistration registration);
         Task<bool> FollowUser(int initiatingUserId, int recievingUserId);
+        Task<UserStats> GetUserStats(int id);
         Task<List<User>> GetFollowers(int userId);
         Task<List<User>> GetFollowing(int userId);
         Task<List<User>> GetFriendRequests(int userId);

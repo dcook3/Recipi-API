@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Recipi_API.Models;
+using Recipi_API.Models.Data_Models;
 
 namespace Recipi_API.Services
 {
@@ -22,6 +23,17 @@ namespace Recipi_API.Services
                           .Include(user => user.UserRelationshipReceivingUsers.Where(rel => rel.ReceivingUserId == selfUserId))
                     .FirstOrDefaultAsync();
 
+        public async Task<UserStats> GetUserStats(int id)
+        {
+            return new()
+            {
+                followers = await db.UserRelationships.Where(ur => ur.ReceivingUserId == id && ur.Relationship == "follow").CountAsync(),
+                following = await db.UserRelationships.Where(ur => ur.InitiatingUserId == id && ur.Relationship == "follow").CountAsync(),
+                friends = await db.UserRelationships.Where(ur => (ur.ReceivingUserId == id || ur.InitiatingUserId == id) && ur.Relationship == "friend").CountAsync(),
+                posts = await db.Posts.Where(post => post.UserId == id).CountAsync()
+            };
+        }
+        
         public async Task<bool> CreateUser(UserRegistration registration)
         {
 

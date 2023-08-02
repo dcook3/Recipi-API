@@ -186,6 +186,8 @@ namespace Recipi_API.Controllers
                 {
                     return StatusCode(500);
                 }
+                var userStats = await userSvc.GetUserStats(userId);
+
 
                 return Ok(new
             {
@@ -195,7 +197,8 @@ namespace Recipi_API.Controllers
                 user.ProfilePicture,
                 user.Biography,
                 user.RegisteredDatetime,
-                user.Verified
+                user.Verified,
+                UserStats = userStats
             });
             }
             catch (Exception ex)
@@ -251,6 +254,8 @@ namespace Recipi_API.Controllers
                                            .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
                                            .ToList();
 
+                var userStats = await userSvc.GetUserStats(foundUser.UserId);
+
                 return Ok(new
                 {
                     foundUser.UserId,
@@ -259,7 +264,13 @@ namespace Recipi_API.Controllers
                     foundUser.ProfilePicture,
                     foundUser.Biography,
                     foundUser.RegisteredDatetime,
-                    YourRelationships = combinedRels
+                    YourRelationships = combinedRels,
+                    UserStats = new
+                    {
+                        userStats.following,
+                        userStats.followers,
+                        userStats.posts
+                    }
                 });
             }
             catch (Exception ex)
@@ -312,6 +323,9 @@ namespace Recipi_API.Controllers
                 combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
                                            .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
                                            .ToList();
+
+                var userStats = await userSvc.GetUserStats(foundUser.UserId);
+
                 return Ok(new
                 {
                     UserId = foundUser.UserId,
@@ -320,7 +334,13 @@ namespace Recipi_API.Controllers
                     ProfilePicture = foundUser.ProfilePicture,
                     Biography = foundUser.Biography,
                     RegisteredDateTime = foundUser.RegisteredDatetime,
-                    YourRelationships = combinedRels
+                    YourRelationships = combinedRels,
+                    UserStats = new
+                    {
+                        userStats.following,
+                        userStats.followers,
+                        userStats.posts
+                    }
                 });
             }
             catch (Exception ex)

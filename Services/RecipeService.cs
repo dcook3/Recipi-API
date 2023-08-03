@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.DataProtection.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Recipi_API.Models;
 using Recipi_API.Models.Data_Models;
 
@@ -134,32 +135,52 @@ namespace Recipi_API.Services
             return res > 0;
 
         }
-        public async Task<List<Recipe>> GetRecipeCookbook(int userId, string sortBy)
+        public async Task<List<Recipe>> GetRecipeCookbook(int userId, string? sortBy)
         {
-            //Could add more, depending on which sort keys we wish to use.
-            if(sortBy == "author")
-            {
-                return await context.RecipeCookbooks.Where(rc => rc.UserId == userId)
-                                                    .Select(rc => rc.Recipe)
-                                                    .OrderBy(r => r.User.Username)
-                                                    .ThenBy(r => r.CreatedDatetime)
+            switch (sortBy){
+                case "Popular":
+                    return await context.RecipeCookbooks.Where(rc => rc.UserId == userId)
+                                                    .Select(rc => new {
+                                                        rc.Recipe,
+                                                        UsedCount = rc.Recipe.Posts.Count() + rc.Recipe.RecipeCookbooks.Count(),
+                                                        rc.RecipeOrder
+                                                    })
+                                                    .OrderBy(ro => ro.UsedCount)
+                                                    .ThenBy(ro => ro.RecipeOrder)
+                                                    .Select(ro => ro.Recipe)
                                                     .ToListAsync();
-            }
-            else
-            {
-                return await context.RecipeCookbooks.Where(rc => rc.UserId == userId)
+                case "Author":
+                    return await context.RecipeCookbooks.Where(rc => rc.UserId == userId)
+                                                    .OrderBy(rc => rc.Recipe.User.Username)
+                                                    .ThenBy(ro => ro.RecipeOrder)
                                                     .Select(rc => rc.Recipe)
-                                                    .OrderBy(r => r.CreatedDatetime)
                                                     .ToListAsync();
+                    break;
+                case "Date Created: Newest First":
+                    return await context.RecipeCookbooks.Where(rc => rc.UserId == userId)
+                                                    .OrderByDescending(rc => rc.Recipe.CreatedDatetime)
+                                                    .ThenBy(rc => rc.RecipeOrder)
+                                                    .Select(rc => rc.Recipe)
+                                                    .ToListAsync();
+                    break;
+                case "Date Created: Oldest First":
+                    return await context.RecipeCookbooks.Where(rc => rc.UserId == userId)
+                                                    .OrderBy(rc => rc.Recipe.CreatedDatetime)
+                                                    .ThenBy(rc => rc.RecipeOrder)
+                                                    .Select(rc => rc.Recipe)
+                                                    .ToListAsync();
+                    break;
+                default:
+                    return await context.RecipeCookbooks.Where(rc => rc.UserId == userId)
+                                                    .OrderBy(rc => rc.RecipeOrder)
+                                                    .Select(rc => rc.Recipe)
+                                                    .ToListAsync();
+                    break;
+
+
             }
         }
 
-        public async Task<List<Recipe>> GetRecipeCookbook(int userId)
-        {
-            return await context.RecipeCookbooks.Where(rc => rc.UserId == userId)
-                                        .Select(rc => rc.Recipe)
-                                        .ToListAsync();
-        }
 
         public async Task<bool> CheckRecipeUsed(Recipe recipe)
         {

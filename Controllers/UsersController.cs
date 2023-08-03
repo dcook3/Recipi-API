@@ -759,15 +759,27 @@ namespace Recipi_API.Controllers
                 }
             }
         }
-        
-        [HttpGet("Followers")]
-        public async Task<IActionResult> GetFollowers()
+
+        [AllowAnonymous]
+        [HttpGet("{userId}/Followers")]
+        public async Task<IActionResult> GetFollowers(int userId)
         {
             try
             {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
-            {
-                    return BadRequest();
+                if (int.TryParse(claims.FindFirst("Id")?.Value, out int selfId))
+                {
+                    var blockStatus = await userSvc.CheckBlock(selfId, userId);
+                    if ((int)blockStatus > 0)
+                    {
+                        if ((int)blockStatus == 2)
+                        {
+                            return Unauthorized("User has been blocked");
+                        }
+                        else
+                        {
+                            return Ok(new List<User>());
+                        }
+                    }
                 }
 
                 var followers = await userSvc.GetFollowers(userId);
@@ -798,15 +810,27 @@ namespace Recipi_API.Controllers
                 }
             }
         }
-        
-        [HttpGet("Following")]
-        public async Task<IActionResult> GetFollowing()
+
+        [AllowAnonymous]
+        [HttpGet("{userId}/Following")]
+        public async Task<IActionResult> GetFollowing(int userId)
         {
             try
             {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
-            {
-                    return BadRequest();
+                if (int.TryParse(claims.FindFirst("Id")?.Value, out int selfId))
+                {
+                    var blockStatus = await userSvc.CheckBlock(selfId, userId);
+                    if ((int)blockStatus > 0)
+                    {
+                        if ((int)blockStatus == 2)
+                        {
+                            return Unauthorized("User has been blocked");
+                        }
+                        else
+                        {
+                            return Ok(new List<User>());
+                        }
+                    }
                 }
 
                 var following = await userSvc.GetFollowing(userId);

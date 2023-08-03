@@ -410,14 +410,7 @@ namespace Recipi_API.Controllers
                 }
 
                 List<Recipe> recipes = new();
-                if (sortBy != null)
-                {
-                     recipes = await _recipeService.GetRecipeCookbook(currentId, sortBy);
-                }
-                else
-                {
-                     recipes = await _recipeService.GetRecipeCookbook(currentId);
-                }
+                recipes = await _recipeService.GetRecipeCookbook(currentId, sortBy);
 
                 return Ok(recipes.Select(r => new
                 {

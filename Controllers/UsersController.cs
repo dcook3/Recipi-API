@@ -225,6 +225,7 @@ namespace Recipi_API.Controllers
             try
             {
                 User? foundUser;
+                List<string> combinedRels = new List<string>();
                 if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
                 {
                     foundUser = await userSvc.GetUser(username);
@@ -253,13 +254,10 @@ namespace Recipi_API.Controllers
                             return NotFound();
                         }
                     }
-                }
-
-
-                List<string> combinedRels = new List<string>();
-                combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => (rel.Relationship == "friend") ? "friend" : (rel.Relationship + "ed")).ToList())
+                    combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => (rel.Relationship == "friend") ? "friend" : (rel.Relationship + "ed")).ToList())
                                            .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => (rel.Relationship == "friend") ? "friend" : (rel.Relationship + "ing")).ToList())
                                            .ToList();
+                }
 
                 var userStats = await userSvc.GetUserStats(foundUser.UserId);
 
@@ -304,6 +302,7 @@ namespace Recipi_API.Controllers
             try
             {
                 User? foundUser;
+                List<string> combinedRels = new List<string>();
                 if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
                 {
                     foundUser = await userSvc.GetUser(userId);
@@ -331,13 +330,10 @@ namespace Recipi_API.Controllers
                             return NotFound();
                         }
                     }
-                }
-
-
-                List<string> combinedRels = new List<string>();
-                combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => (rel.Relationship == "friend") ? "friend" : (rel.Relationship + "ed")).ToList())
+                    combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => (rel.Relationship == "friend") ? "friend" : (rel.Relationship + "ed")).ToList())
                                            .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => (rel.Relationship == "friend") ? "friend" : (rel.Relationship + "ing")).ToList())
                                            .ToList();
+                }
 
                 var userStats = await userSvc.GetUserStats(foundUser.UserId);
 

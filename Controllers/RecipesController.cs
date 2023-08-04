@@ -21,12 +21,14 @@ namespace Recipi_API.Controllers
     {
         private readonly IRecipeService _recipeService;
         private readonly IIngredientsService _ingService;
+        private readonly IUserService _userService;
         private readonly ClaimsIdentity? _claims;
 
-        public RecipesController(IRecipeService recipeService, IIngredientsService ingService, IHttpContextAccessor _context)
+        public RecipesController(IRecipeService recipeService, IIngredientsService ingService, IUserService userService, IHttpContextAccessor _context)
         {
             _recipeService = recipeService;
             _ingService = ingService;
+            _userService = userService;
             _claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
         }
 
@@ -411,6 +413,65 @@ namespace Recipi_API.Controllers
 
                 List<Recipe> recipes = new();
                 recipes = await _recipeService.GetRecipeCookbook(currentId, sortBy);
+
+                return Ok(recipes.Select(r => new
+                {
+                    r.RecipeId,
+                    r.RecipeTitle,
+                    r.RecipeDescription,
+                    r.UserId,
+                    r.CreatedDatetime
+
+                }));
+            }
+            catch (Exception ex)
+            {
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    Debug.Write(ex.Message);
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("cookbook/User/{userId}")]
+        public async Task<ActionResult> GetCookbook(int userId, string? sortBy)
+        {
+            try
+            {
+                List<Recipe> recipes = new();
+                if (_claims == null || !int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
+                {
+                    recipes = await _recipeService.GetRecipeCookbook(userId, sortBy);
+                }
+                else
+                {
+                    var blockStatus = await _userService.CheckBlock(currentId, userId);
+                    if ((int)blockStatus > 0)
+                    {
+                        if ((int)blockStatus == 2)
+                        {
+                            return Unauthorized("User has been blocked");
+                        }
+                        else
+                        {
+                            return NotFound();
+                        }
+                    }
+
+                    recipes = await _recipeService.GetRecipeCookbook(userId, sortBy);
+                }
+                
+                
 
                 return Ok(recipes.Select(r => new
                 {

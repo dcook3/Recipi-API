@@ -54,16 +54,15 @@ public partial class RecipiDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseSqlServer(
-              "Server="   + Environment.GetEnvironmentVariable("DB_SERVER")     + ";"
+              "Server=" + Environment.GetEnvironmentVariable("DB_SERVER") + ";"
             + "Database=" + Environment.GetEnvironmentVariable("DB_PRIMARY_DB") + ";"
-            + "User ID="  + Environment.GetEnvironmentVariable("DB_USER_ID")    + ";"
-            + "Password=" + Environment.GetEnvironmentVariable("DB_USER_PW")    + ";"
+            + "User ID=" + Environment.GetEnvironmentVariable("DB_USER_ID") + ";"
+            + "Password=" + Environment.GetEnvironmentVariable("DB_USER_PW") + ";"
             + "Encrypt=True;"
             + "Connection Timeout=30;"
             + "TrustServerCertificate=True"
         );
     }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<BugReport>(entity =>
@@ -410,15 +409,16 @@ public partial class RecipiDbContext : DbContext
 
         modelBuilder.Entity<UserRelationship>(entity =>
         {
-            entity.HasKey(e => new { e.InitiatingUserId, e.ReceivingUserId });
+            entity.HasKey(e => e.UserRelationshipId).HasName("PK_UserRelationship_1");
 
             entity.ToTable("UserRelationship");
 
-            entity.Property(e => e.InitiatingUserId).HasColumnName("initiating_user_id");
-            entity.Property(e => e.ReceivingUserId).HasColumnName("receiving_user_id");
+            entity.Property(e => e.UserRelationshipId).HasColumnName("user_relationship_id");
             entity.Property(e => e.InitiatedDatetime)
                 .HasPrecision(3)
                 .HasColumnName("initiated_datetime");
+            entity.Property(e => e.InitiatingUserId).HasColumnName("initiating_user_id");
+            entity.Property(e => e.ReceivingUserId).HasColumnName("receiving_user_id");
             entity.Property(e => e.Relationship)
                 .HasMaxLength(20)
                 .HasColumnName("relationship");

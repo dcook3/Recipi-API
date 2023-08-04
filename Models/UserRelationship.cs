@@ -5,6 +5,8 @@ namespace Recipi_API.Models;
 
 public partial class UserRelationship
 {
+    public int UserRelationshipId { get; set; }
+
     public int InitiatingUserId { get; set; }
 
     public int ReceivingUserId { get; set; }

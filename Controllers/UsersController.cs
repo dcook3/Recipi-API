@@ -224,34 +224,41 @@ namespace Recipi_API.Controllers
         {
             try
             {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
-            {
-                    return BadRequest();
-                }
-
-                User? foundUser = await userSvc.GetUser(username, selfUserId);
-                if(foundUser == null)
+                User? foundUser;
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
                 {
-                    return NotFound();
-                }
-
-                var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
-                if ((int)blockStatus > 0)
-                {
-                    if (blockStatus == BlockStatus.Blocked)
-                    {
-                        return Unauthorized("User has been blocked");
-                    }
-                    else
+                    foundUser = await userSvc.GetUser(username);
+                    if (foundUser == null)
                     {
                         return NotFound();
                     }
                 }
+                else
+                {
+                    foundUser = await userSvc.GetUser(username, selfUserId);
+                    if (foundUser == null)
+                    {
+                        return NotFound();
+                    }
 
-                
-                List<string> combinedRels = new();
-                combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
-                                           .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
+                    var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
+                    if ((int)blockStatus > 0)
+                    {
+                        if ((int)blockStatus == 2)
+                        {
+                            return Unauthorized("User has been blocked");
+                        }
+                        else
+                        {
+                            return NotFound();
+                        }
+                    }
+                }
+
+
+                List<string> combinedRels = new List<string>();
+                combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => (rel.Relationship == "friend") ? "friend" : (rel.Relationship + "ed")).ToList())
+                                           .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => (rel.Relationship == "friend") ? "friend" : (rel.Relationship + "ing")).ToList())
                                            .ToList();
 
                 var userStats = await userSvc.GetUserStats(foundUser.UserId);
@@ -290,38 +297,46 @@ namespace Recipi_API.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("id/{userId}")]
         public async Task<IActionResult> GetUserByUserId(int userId)
         {
             try
             {
+                User? foundUser;
                 if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int selfUserId))
                 {
-                    return BadRequest();
-                }
-
-                User? foundUser = await userSvc.GetUser(userId, selfUserId);
-                if (foundUser == null)
-                {
-                    return NotFound();
-                }
-
-                var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
-                if ((int)blockStatus > 0)
-                {
-                    if ((int)blockStatus == 2)
-                    {
-                        return Unauthorized("User has been blocked");
-                    }
-                    else
+                    foundUser = await userSvc.GetUser(userId);
+                    if (foundUser == null)
                     {
                         return NotFound();
                     }
                 }
+                else{
+                    foundUser = await userSvc.GetUser(userId, selfUserId);
+                    if (foundUser == null)
+                    {
+                        return NotFound();
+                    }
+
+                    var blockStatus = await userSvc.CheckBlock(selfUserId, foundUser.UserId);
+                    if ((int)blockStatus > 0)
+                    {
+                        if ((int)blockStatus == 2)
+                        {
+                            return Unauthorized("User has been blocked");
+                        }
+                        else
+                        {
+                            return NotFound();
+                        }
+                    }
+                }
+
 
                 List<string> combinedRels = new List<string>();
-                combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => rel.Relationship).ToList())
-                                           .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => rel.Relationship).ToList())
+                combinedRels = combinedRels.Concat(foundUser.UserRelationshipInitiatingUsers.Select(rel => (rel.Relationship == "friend") ? "friend" : (rel.Relationship + "ed")).ToList())
+                                           .Concat(foundUser.UserRelationshipReceivingUsers.Select(rel => (rel.Relationship == "friend") ? "friend" : (rel.Relationship + "ing")).ToList())
                                            .ToList();
 
                 var userStats = await userSvc.GetUserStats(foundUser.UserId);
@@ -406,8 +421,8 @@ namespace Recipi_API.Controllers
         {
             try
             {
-            if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
-            {
+                if (this.claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int userId))
+                {
                     return BadRequest();
                 }
 
@@ -448,6 +463,11 @@ namespace Recipi_API.Controllers
                   {
                       return BadRequest();
                   }
+
+                  if(userId == recievingUserId)
+                    {
+                        return BadRequest();
+                    }
 
                 if (!await userSvc.CheckUser(recievingUserId))
                 {

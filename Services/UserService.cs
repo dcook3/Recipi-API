@@ -13,14 +13,14 @@ namespace Recipi_API.Services
         public async Task<User?> GetUser(int id) => await db.Users.Where(user => user.UserId == id).FirstOrDefaultAsync();
         public async Task<User?> GetUser(int id, int selfUserId) =>
             await db.Users.Where(user => user.UserId == id)
-                          .Include(user => user.UserRelationshipInitiatingUsers.Where(rel => rel.InitiatingUserId == selfUserId))
-                          .Include(user => user.UserRelationshipReceivingUsers.Where(rel => rel.ReceivingUserId == selfUserId))
+                          .Include(user => user.UserRelationshipInitiatingUsers.Where(rel => rel.ReceivingUserId == selfUserId && rel.InitiatingUserId == id))
+                          .Include(user => user.UserRelationshipReceivingUsers.Where(rel => rel.InitiatingUserId == selfUserId && rel.ReceivingUserId == id))
                     .FirstOrDefaultAsync();
         public async Task<User?> GetUser(string username) => await db.Users.Where(user => user.Username == username).FirstOrDefaultAsync();
         public async Task<User?> GetUser(string username, int selfUserId) =>
             await db.Users.Where(user => user.Username == username)
-                          .Include(user => user.UserRelationshipInitiatingUsers.Where(rel => rel.InitiatingUserId == selfUserId))
-                          .Include(user => user.UserRelationshipReceivingUsers.Where(rel => rel.ReceivingUserId == selfUserId))
+                          .Include(user => user.UserRelationshipInitiatingUsers.Where(rel => rel.ReceivingUserId == selfUserId && rel.InitiatingUser.Username == username))
+                          .Include(user => user.UserRelationshipReceivingUsers.Where(rel => rel.InitiatingUserId == selfUserId && rel.ReceivingUser.Username == username))
                     .FirstOrDefaultAsync();
 
         public async Task<UserStats> GetUserStats(int id)
@@ -81,8 +81,8 @@ namespace Recipi_API.Services
                                                     .Select(rel => rel.Relationship)
                                                     .ToListAsync();
         public async Task<List<UserRelationship>> GetRelationships(int userId1, int userId2) =>
-            await db.UserRelationships.Where(rel => (rel.InitiatingUserId == userId1 || rel.InitiatingUserId == userId2) ||
-                                                    (rel.ReceivingUserId == userId1 || rel.ReceivingUserId == userId2))
+            await db.UserRelationships.Where(rel => (rel.ReceivingUserId == userId1 && rel.InitiatingUserId == userId2) ||
+                                                    (rel.InitiatingUserId == userId1 && rel.ReceivingUserId == userId2))
                                                     .ToListAsync();
 
         public async Task<bool> RequestFriend(int initiatingUserId, int recievingUserId)
@@ -120,7 +120,7 @@ namespace Recipi_API.Services
 
         public async Task<List<User>> GetFriendRequests(int userId) =>
             await db.UserRelationships.Where(rel => rel.ReceivingUserId == userId && rel.Relationship == "friendRequest")
-                                                      .Select(rel => rel.ReceivingUser)
+                                                      .Select(rel => rel.InitiatingUser)
                                                       .ToListAsync();
 
         public async Task<bool> FollowUser(int initiatingUserId, int recievingUserId)

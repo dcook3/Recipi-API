@@ -298,7 +298,7 @@ namespace Recipi_API.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("id/{userId}")]
+        [HttpGet("{userId}")]
         public async Task<IActionResult> GetUserByUserId(int userId)
         {
             try

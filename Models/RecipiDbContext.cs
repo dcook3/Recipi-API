@@ -10,8 +10,7 @@ public partial class RecipiDbContext : DbContext
     {
     }
 
-    public RecipiDbContext(DbContextOptions<RecipiDbContext> options)
-        : base(options)
+    public RecipiDbContext(DbContextOptions<RecipiDbContext> options) : base(options)
     {
     }
 

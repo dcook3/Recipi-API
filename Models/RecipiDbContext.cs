@@ -10,7 +10,8 @@ public partial class RecipiDbContext : DbContext
     {
     }
 
-    public RecipiDbContext(DbContextOptions<RecipiDbContext> options) : base(options)
+    public RecipiDbContext(DbContextOptions<RecipiDbContext> options)
+        : base(options)
     {
     }
 
@@ -392,7 +393,7 @@ public partial class RecipiDbContext : DbContext
                 .HasMaxLength(254)
                 .HasColumnName("email");
             entity.Property(e => e.Password)
-                .HasMaxLength(50)
+                .HasMaxLength(72)
                 .HasColumnName("password");
             entity.Property(e => e.ProfilePicture)
                 .HasMaxLength(2048)

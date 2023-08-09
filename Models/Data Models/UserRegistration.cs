@@ -14,7 +14,7 @@ namespace Recipi_API.Models
         [EmailAddress]
         public string Email { get; set; } = null!;
 
-        [MaxLength(50)]
+        [MaxLength(72)]
         public string Password { get; set; } = null!;
 
         [MaxLength(2048)]

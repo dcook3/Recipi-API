@@ -39,8 +39,8 @@ namespace Recipi_API.Controllers
             client = new AmazonS3Client(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, bucketRegion);
         }
 
-        [HttpPost]
-        public async Task<ActionResult> GetSignedURL(SignedUrlRequest createSignedUrlRequest)
+        [HttpGet]
+        public async Task<ActionResult> GetSignedURL()
         {
             if (_claims == null || !int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
             {
@@ -49,20 +49,11 @@ namespace Recipi_API.Controllers
 
             try
             {
-                var putRequest = new PutObjectRequest
-                {
-                    BucketName = bucketName,
-                    Key = key,
-                    ContentBody = createSignedUrlRequest.Content
-                };
-
-                PutObjectResponse putObjectResponse = await client.PutObjectAsync(putRequest);
-
                 GetPreSignedUrlRequest preSignedUrlRequest = new GetPreSignedUrlRequest
                 {
                     BucketName = bucketName,
                     Key = key,
-                    Expires = DateTime.UtcNow.AddHours(createSignedUrlRequest.TimeToLiveInHours)
+                    Expires = DateTime.UtcNow.AddHours(1)
                 };
 
                 string preSignedUrl = client.GetPreSignedURL(preSignedUrlRequest);

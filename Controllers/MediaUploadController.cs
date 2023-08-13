@@ -11,6 +11,7 @@ using Recipi_API.Models.Data_Models;
 
 namespace Recipi_API.Controllers
 {
+    [AllowAnonymous]
     [Route("/api/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
@@ -31,7 +32,7 @@ namespace Recipi_API.Controllers
             _claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
 
             bucketName = "recipi-pwa-storage";
-            key = Guid.NewGuid().ToString() + ".txt";
+            key = Guid.NewGuid().ToString();
             RegionEndpoint bucketRegion = RegionEndpoint.USEast2;
 
             AWS_ACCESS_KEY_ID = Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID") ?? "Invalid Keys";
@@ -44,7 +45,7 @@ namespace Recipi_API.Controllers
         {
             if (_claims == null || !int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
             {
-                return BadRequest("Must be logged in to request an upload URL.");
+                //return BadRequest("Must be logged in to request an upload URL.");
             }
 
             try
@@ -53,7 +54,9 @@ namespace Recipi_API.Controllers
                 {
                     BucketName = bucketName,
                     Key = key,
-                    Expires = DateTime.UtcNow.AddHours(1)
+                    Verb = HttpVerb.PUT, 
+                    Protocol = Protocol.HTTPS, 
+                    Expires = DateTime.Now.AddHours(4)
                 };
 
                 string preSignedUrl = client.GetPreSignedURL(preSignedUrlRequest);

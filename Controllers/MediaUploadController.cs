@@ -11,7 +11,6 @@ using Recipi_API.Models.Data_Models;
 
 namespace Recipi_API.Controllers
 {
-    [AllowAnonymous]
     [Route("/api/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
@@ -45,7 +44,7 @@ namespace Recipi_API.Controllers
         {
             if (_claims == null || !int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
             {
-                //return BadRequest("Must be logged in to request an upload URL.");
+                return BadRequest("Must be logged in to request an upload URL.");
             }
 
             try

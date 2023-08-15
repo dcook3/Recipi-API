@@ -40,9 +40,9 @@ namespace Recipi_API.Controllers
 
                 User? user = await userSvc.AuthenticateLogin(login);
 
-                if (user == null)
+                if (user == null || !BCrypt.Net.BCrypt.Verify(login.Password, user.Password))
                 {
-                    return Unauthorized();
+                    return Unauthorized("Incorrect Username or Password");
                 }
 
                 if (user.UserRoles.Count != 1)

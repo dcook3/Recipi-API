@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Net;
 using Recipi_API.Models;
 using Recipi_API.Models.Data_Models;
 
@@ -65,11 +66,13 @@ namespace Recipi_API.Services
             return rowCount == 2;
         }
 
+
+        private bool verifyPassword(string password, string hash) => BCrypt.Net.BCrypt.Verify(password, hash);
+
         public async Task<User?> AuthenticateLogin(UserLogin login)
         {
             return await db.Users.Where(user =>
-                                       (user.Username == login.Credential || user.Email == login.Credential) &&
-                                        user.Password == login.Password)
+                                       user.Username == login.Credential || user.Email == login.Credential)
                                        .Include(user => user.UserRoles)
                                        .ThenInclude(userRole => userRole.Role)
                                        .FirstOrDefaultAsync();

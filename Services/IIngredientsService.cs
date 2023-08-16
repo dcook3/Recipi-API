@@ -8,5 +8,6 @@ namespace Recipi_API.Services
         public Task<int> CreateIngredient(Ingredient ingredient);
         public Task<Ingredient?> GetIngredientById(int ingId);
         public Task<bool> CheckIngredient(int ingId);
+        public Task<List<Ingredient>> GetIngredients();
     }
 }

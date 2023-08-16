@@ -27,5 +27,7 @@ namespace Recipi_API.Services
         {
             return await context.Ingredients.AnyAsync(i => i.IngredientId == ingId);
         }
+
+        public async Task<List<Ingredient>> GetIngredients() => await context.Ingredients.ToListAsync();
     }
 }

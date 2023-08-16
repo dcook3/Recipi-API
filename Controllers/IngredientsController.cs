@@ -109,5 +109,31 @@ namespace Recipi_API.Controllers
                 }
             }
         }
+
+        [HttpGet]
+        public async Task<ActionResult> GetIngredients()
+        {
+            try
+            {
+                List<Ingredient> ingredients = await _ingredientsService.GetIngredients();
+                return Ok(ingredients);
+            }
+            catch(Exception ex)
+            {
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
+            
+        }
     }
 }

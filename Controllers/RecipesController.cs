@@ -596,6 +596,7 @@ namespace Recipi_API.Controllers
                 {
                     var result = new
                     {
+                        RecipiId = r.RecipeId,
                         RecipeTitle = r.RecipeTitle,
                         RecipeDescription = r.RecipeDescription,
                         CreatedByUsername = r.User?.Username,
@@ -612,6 +613,7 @@ namespace Recipi_API.Controllers
                                 si.IngredientMeasurementValue,
                                 Ingredient = new
                                 {
+                                    si.Ingredient.IngredientId,
                                     si.Ingredient.IngredientTitle,
                                     si.Ingredient.IngredientDescription,
                                     si.Ingredient.IngredientIcon

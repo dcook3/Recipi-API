@@ -596,7 +596,7 @@ namespace Recipi_API.Controllers
                 {
                     var result = new
                     {
-                        RecipiId = r.RecipeId,
+                        RecipeId = r.RecipeId,
                         RecipeTitle = r.RecipeTitle,
                         RecipeDescription = r.RecipeDescription,
                         CreatedByUsername = r.User?.Username,

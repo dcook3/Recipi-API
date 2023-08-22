@@ -111,23 +111,40 @@ namespace Recipi_API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetIngredients(string? keyword)
+        public async Task<ActionResult> GetIngredients()
         {
             try
             {
-                if (keyword == null)
+                List<Ingredient> ingredients = await _ingredientsService.GetIngredients();
+                return Ok(ingredients);
+            }
+            catch(Exception ex)
+            {
+                if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
                 {
-                    List<Ingredient> ingredients = await _ingredientsService.GetIngredients();
-                    return Ok(ingredients);
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
                 }
                 else
                 {
-                    keyword = $"%{keyword.ToLower()}%";
-                    List<Ingredient> ingredients = await _ingredientsService.SearchIngredients(keyword);
-                    return Ok(ingredients);
+                    return StatusCode(500, "Internal server error. Please try again later.");
                 }
             }
-            catch(Exception ex)
+        }
+
+        [HttpGet("search/{keyword}")]
+        public async Task<ActionResult> GetIngredients(string keyword)
+        {
+            try
+            {
+                keyword = $"%{keyword.ToLower()}%";
+                List<Ingredient> ingredients = await _ingredientsService.SearchIngredients(keyword);
+                return Ok(ingredients);
+            }
+            catch (Exception ex)
             {
                 if (_claims != null && _claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
                 {

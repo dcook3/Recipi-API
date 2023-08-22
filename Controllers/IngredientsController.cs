@@ -111,12 +111,21 @@ namespace Recipi_API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetIngredients()
+        public async Task<ActionResult> GetIngredients(string? keyword)
         {
             try
             {
-                List<Ingredient> ingredients = await _ingredientsService.GetIngredients();
-                return Ok(ingredients);
+                if (keyword == null)
+                {
+                    List<Ingredient> ingredients = await _ingredientsService.GetIngredients();
+                    return Ok(ingredients);
+                }
+                else
+                {
+                    keyword = $"%{keyword.ToLower()}%";
+                    List<Ingredient> ingredients = await _ingredientsService.SearchIngredients(keyword);
+                    return Ok(ingredients);
+                }
             }
             catch(Exception ex)
             {
@@ -133,7 +142,6 @@ namespace Recipi_API.Controllers
                     return StatusCode(500, "Internal server error. Please try again later.");
                 }
             }
-            
         }
     }
 }

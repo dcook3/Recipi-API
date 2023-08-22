@@ -29,5 +29,7 @@ namespace Recipi_API.Services
         }
 
         public async Task<List<Ingredient>> GetIngredients() => await context.Ingredients.ToListAsync();
+
+        public async Task<List<Ingredient>> SearchIngredients(string keyword) => await context.Ingredients.Where(i => EF.Functions.Like(i.IngredientTitle, keyword)).ToListAsync();
     }
 }

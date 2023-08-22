@@ -3,14 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Recipi_API.Services;
 using Recipi_API.Models;
 using Recipi_API.Models.Data_Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using System.Data;
 using System.Security.Claims;
-using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Writers;
-using System.Globalization;
 using System.Diagnostics;
 
 namespace Recipi_API.Controllers
@@ -687,9 +683,6 @@ namespace Recipi_API.Controllers
                 }
             }
         }
-
-        
-
 
         [AllowAnonymous]
         [HttpGet("{recipeId}/steps/{stepId}")]

@@ -86,7 +86,7 @@ namespace Recipi_API.Controllers
                 int numRows = await _ingredientsService.CreateIngredient(i);
                 if (numRows > 0)
                 {
-                    return Ok(new { i.IngredientId });
+                    return Ok();
                 }
                 else
                 {

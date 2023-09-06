@@ -420,7 +420,8 @@ namespace Recipi_API.Controllers
                             User = new
                             {
                                 post.Recipe.User.UserId,
-                                post.Recipe.User.Username
+                                post.Recipe.User.Username,
+                                post.Recipe.User.ProfilePicture
                             },
                             post.Recipe.CreatedDatetime,
                             RecipeSteps = post.Recipe.RecipeSteps.Select(rs => new
@@ -461,7 +462,8 @@ namespace Recipi_API.Controllers
                         User = new
                         {
                             post.User.UserId,
-                            post.User.Username
+                            post.User.Username,
+                            post.User.ProfilePicture
                         },
                         Recipe = recipeData
 

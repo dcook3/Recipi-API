@@ -405,14 +405,25 @@ namespace Recipi_API.Controllers
                 Post? post = await _fetchService.GetSinglePost(postId);
                 if (post != null)
                 {
+                    bool hasLiked;
+
                     if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                     {
+                        //NOTE: Update front end Post model as well to reflect the two new fields
+
                         //only create post interaction if user is logged in
                         await _interactionsService.CreatePostInteraction(postId, currentId);
+                        hasLiked = await _interactionsService.HasLiked(postId, currentId);
                     }
+                    else
+                    {
+                        hasLiked = false;
+                    }
+
                     object? recipeData = null;
                     string? postMedia = null;
                     string? postThumbnail = null;
+
                     if(post.Recipe == null)
                     {
                         postMedia = post.PostMedia;
@@ -459,6 +470,9 @@ namespace Recipi_API.Controllers
                         };
                     }
 
+                    int likes = await _interactionsService.GetLikeCount(postId);
+                    int comments = await _interactionsService.GetCommentCount(postId);
+
                     return Ok(new
                     {
                         post.PostId,
@@ -471,8 +485,10 @@ namespace Recipi_API.Controllers
                             post.User.UserId,
                             post.User.Username
                         },
-                        Recipe = recipeData
-
+                        Recipe = recipeData,
+                        Likes = likes,
+                        Comments = comments,
+                        HasLiked = hasLiked
                     });
                 }
                 else
@@ -619,7 +635,7 @@ namespace Recipi_API.Controllers
                 }
             }
         }
-  
+
         [HttpPost("{postId}/report")]
         public async Task<IActionResult> PostReport(int postId, string message)
         {

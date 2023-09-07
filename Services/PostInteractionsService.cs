@@ -48,6 +48,7 @@ namespace Recipi_API.Services
                 return null;
             }
         }
+
         public async Task<int> PostLike(int postId, int userId)
         {
 
@@ -85,6 +86,21 @@ namespace Recipi_API.Services
             };
             context.PostReports.Add(r);
             return await context.SaveChangesAsync();
+        }
+
+        public async Task<int> GetLikeCount(int postId)
+        {
+            return await context.PostInteractions.Where(pi => pi.PostId == postId && pi.Liked == true).CountAsync();
+        }
+
+        public async Task<int> GetCommentCount(int postId)
+        {
+            return await context.PostComments.Where(c => c.PostId == postId).CountAsync();
+        }
+
+        public async Task<bool> HasLiked(int postId, int userId)
+        {
+            return await context.PostInteractions.Where(pi => pi.PostId == postId && pi.Liked == true && pi.UserId == userId).CountAsync() > 0;
         }
     }
 }

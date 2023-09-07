@@ -10,5 +10,8 @@ namespace Recipi_API.Services
         public Task<PostInteraction?> CreatePostInteraction(int postId, int userId);
         public Task<int> PostLike(int postId, int userId);
         public Task<int> PostReport(int postId, int userId, string message);
+        public Task<int> GetLikeCount(int postId);
+        public Task<bool> HasLiked(int postId, int userId);
+        public Task<int> GetCommentCount(int postId);
     }
 }

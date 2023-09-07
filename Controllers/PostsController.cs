@@ -46,6 +46,8 @@ namespace Recipi_API.Controllers
                     return BadRequest("Post Title is required");
                 if (postData.PostDescription.IsNullOrEmpty())
                     return BadRequest("Post Description is required");
+                if (postData.ThumbnailUrl.IsNullOrEmpty())
+                    return BadRequest("Thumbnail is required");
 
                 List<PostMedium> media = new();
                 if (postData.RecipeId != null) 
@@ -81,18 +83,10 @@ namespace Recipi_API.Controllers
                         return BadRequest("Media and Recipe Steps are out of sync");
                     }
                     postData.PostMedia = null;
-                    postData.ThumbnailUrl = null;
                 }
                 else if (postData.PostMedia.IsNullOrEmpty())
                 {
                     return BadRequest("Must Return Some Media");
-                }
-                else
-                {
-                    if (postData.ThumbnailUrl.IsNullOrEmpty())
-                    {
-                        return BadRequest("Must include thumbnail with Post Media");
-                    }
                 }
 
 
@@ -422,12 +416,9 @@ namespace Recipi_API.Controllers
 
                     object? recipeData = null;
                     string? postMedia = null;
-                    string? postThumbnail = null;
-
                     if(post.Recipe == null)
                     {
                         postMedia = post.PostMedia;
-                        postThumbnail = post.ThumbnailUrl;
                     }
                     else
                     {
@@ -439,7 +430,8 @@ namespace Recipi_API.Controllers
                             User = new
                             {
                                 post.Recipe.User.UserId,
-                                post.Recipe.User.Username
+                                post.Recipe.User.Username,
+                                post.Recipe.User.ProfilePicture
                             },
                             post.Recipe.CreatedDatetime,
                             RecipeSteps = post.Recipe.RecipeSteps.Select(rs => new
@@ -479,11 +471,12 @@ namespace Recipi_API.Controllers
                         post.PostTitle,
                         post.PostDescription,
                         PostMedia = postMedia,
-                        PostThumbnail = postThumbnail,
+                        post.ThumbnailUrl,
                         User = new
                         {
                             post.User.UserId,
-                            post.User.Username
+                            post.User.Username,
+                            post.User.ProfilePicture
                         },
                         Recipe = recipeData,
                         Likes = likes,

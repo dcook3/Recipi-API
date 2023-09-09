@@ -434,7 +434,7 @@ namespace Recipi_API.Controllers
                                     pm.PostMediaId,
                                     pm.MediaUrl,
                                     pm.ThumbnailUrl
-                                }),
+                                }).FirstOrDefault(),
                                 StepIngredients = rs.StepIngredients.Select(si => new
                                 {
                                     si.StepIngredientId,

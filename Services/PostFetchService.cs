@@ -81,9 +81,10 @@ namespace Recipi_API.Services
 
         public async Task<Post?> GetSinglePost(int postId) => await context.Posts.Where(p => p.PostId == postId)
                                                                                  .Include(p => p.User)
+                                                                                 .Include(p => p.PostMediaNavigation)                                       
                                                                                  .Include(p => p.Recipe)
                                                                                     .ThenInclude(r => r!.RecipeSteps)
-                                                                                        .ThenInclude(rs => rs.PostMedia)
+                                                                                        //.ThenInclude(rs => rs.PostMedia)
                                                                                  .Include(p => p.Recipe)
                                                                                     .ThenInclude(r => r!.RecipeSteps)
                                                                                         .ThenInclude(rs => rs.StepIngredients)

@@ -429,12 +429,12 @@ namespace Recipi_API.Controllers
                                 rs.StepId,
                                 rs.StepDescription,
                                 rs.StepOrder,
-                                PostMedia = new
+                                PostMedia = post.PostMediaNavigation.Where(pm => pm.StepId == rs.StepId).Select(pm => new
                                 {
-                                    rs.PostMedia.FirstOrDefault().PostMediaId,
-                                    rs.PostMedia.FirstOrDefault().MediaUrl,
-                                    rs.PostMedia.FirstOrDefault().ThumbnailUrl
-                                },
+                                    pm.PostMediaId,
+                                    pm.MediaUrl,
+                                    pm.ThumbnailUrl
+                                }),
                                 StepIngredients = rs.StepIngredients.Select(si => new
                                 {
                                     si.StepIngredientId,

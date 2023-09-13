@@ -12,7 +12,7 @@ namespace Recipi_API.Services
         private readonly static RecipiDbContext context = new();
         public async Task<List<PostComment>> GetComments(int postId)
         {
-            return await context.PostComments.Where(pc => pc.PostId == postId).ToListAsync();
+            return await context.PostComments.Where(pc => pc.PostId == postId).Include(pc => pc.User).ToListAsync();
         }
 
         public async Task<int> PostComment(int postId, int userId, string comment)

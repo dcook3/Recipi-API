@@ -506,7 +506,6 @@ namespace Recipi_API.Controllers
             }
         }
 
-
         [AllowAnonymous]
         [HttpGet("{postId}/comments")]
         public async Task<ActionResult> GetComments(int postId)
@@ -517,7 +516,6 @@ namespace Recipi_API.Controllers
 
                 if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                 {
-
                     foreach (PostComment comment in comments)
                     {
                         BlockStatus blockStatus = await _userService.CheckBlock(currentId, comment.UserId);
@@ -525,11 +523,21 @@ namespace Recipi_API.Controllers
                         {
                             comments.Remove(comment);
                         }
-                        
                     }
                 }
 
-                return Ok(comments);
+                //Using only the data the front end needs by making this new list, comments2
+                var comments2 = new List<object>();
+                comments.ForEach(comment => comments2.Add(new
+                {
+                    comment.CommentId,
+                    comment.PostId,
+                    comment.User.Username,
+                    comment.User.ProfilePicture,
+                    comment.Comment,
+                    comment.CommentDatetime
+                }));
+                return Ok(comments2);
             }
             catch (Exception ex)
             {
@@ -547,7 +555,7 @@ namespace Recipi_API.Controllers
                 }
             }
         }
-  
+
         [HttpPost("{postId}/comments")]
         public async Task<ActionResult> PostComment(int postId, string comment)
         {

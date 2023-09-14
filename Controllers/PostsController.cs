@@ -332,7 +332,7 @@ namespace Recipi_API.Controllers
                 }
 
                 List<PostPreview> posts = await _fetchService.GetUserPosts(currentId);
-                if (posts != null && posts.Count > 0)
+                if (posts != null)
                 {
                     return Ok(posts);
                 }
@@ -364,7 +364,7 @@ namespace Recipi_API.Controllers
             try
             {
                 List<PostPreview> posts = await _fetchService.GetUserPosts(userId);
-                if (posts != null && posts.Count > 0)
+                if (posts != null)
                 {
                     return Ok(posts);
                 }

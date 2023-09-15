@@ -8,6 +8,7 @@ using System.Data;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Diagnostics;
+using Microsoft.Extensions.Hosting;
 
 namespace Recipi_API.Controllers
 {
@@ -587,6 +588,11 @@ namespace Recipi_API.Controllers
             try
             {
                 Recipe? r = await _recipeService.GetRecipeById(recipeId);
+                bool hasAddedToCookbook = false;
+                if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
+                {
+                    hasAddedToCookbook = await _recipeService.CheckCookbookConflict(currentId, r.RecipeId);
+                }
 
                 if (r != null)
                 {
@@ -595,7 +601,12 @@ namespace Recipi_API.Controllers
                         RecipeId = r.RecipeId,
                         RecipeTitle = r.RecipeTitle,
                         RecipeDescription = r.RecipeDescription,
-                        CreatedByUsername = r.User?.Username,
+                        HasAddedToCookbook = hasAddedToCookbook,
+                        User = new {
+                            r.User?.Username,
+                            r.User?.UserId,
+                            r.User?.ProfilePicture
+                        },
                         CreatedDatetime = r.CreatedDatetime,
                         RecipeSteps = r.RecipeSteps.Select(rs => new
                         {

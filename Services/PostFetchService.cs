@@ -61,8 +61,8 @@ namespace Recipi_API.Services
             List<PostPreview> postPreviews = new();
 
             //https://stackoverflow.com/questions/7927329/sql-ordering-records-by-weight could do something like this with dates today bucket, this week bucket, this month bucket
-            List<Post> posts = await context.Posts.Where(p => !p.PostInteractions.Any(pi => pi.UserId == userId))
-                                                  .OrderByDescending(p => p.PostInteractions.Where(pi => pi.Liked == true).Count())
+            List<Post> posts = await context.Posts.OrderBy(p => p.PostInteractions.Where(pi => pi.UserId == userId).Count())
+                                                  .ThenByDescending(p => p.PostInteractions.Where(pi => pi.Liked == true).Count())
                                                   .ToListAsync();
             /*
                                                   .OrderByDescending(p => p.PostInteractions.GroupBy(pi => pi.PostId)

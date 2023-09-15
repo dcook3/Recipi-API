@@ -419,9 +419,9 @@ namespace Recipi_API.Controllers
                             post.Recipe.RecipeDescription,
                             User = new
                             {
-                                post.Recipe.User.UserId,
-                                post.Recipe.User.Username,
-                                post.Recipe.User.ProfilePicture
+                                post.Recipe.User?.UserId,
+                                post.Recipe.User?.Username,
+                                post.Recipe.User?.ProfilePicture
                             },
                             post.Recipe.CreatedDatetime,
                             RecipeSteps = post.Recipe.RecipeSteps.Select(rs => new

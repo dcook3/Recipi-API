@@ -400,7 +400,7 @@ namespace Recipi_API.Controllers
                 if (post != null)
                 {
                     bool hasLiked;
-
+                    bool hasAddedToCookbook = false;
                     if (_claims != null && int.TryParse(_claims.FindFirst("Id")?.Value, out int currentId))
                     {
                         //NOTE: Update front end Post model as well to reflect the two new fields
@@ -408,10 +408,17 @@ namespace Recipi_API.Controllers
                         //only create post interaction if user is logged in
                         await _interactionsService.CreatePostInteraction(postId, currentId);
                         hasLiked = await _interactionsService.HasLiked(postId, currentId);
+
+                        if (post.Recipe != null)
+                        {
+                            hasAddedToCookbook = await _recipeService.CheckCookbookConflict(currentId, post.Recipe.RecipeId);
+                        }
+                        
                     }
                     else
                     {
                         hasLiked = false;
+                        hasAddedToCookbook = false;
                     }
 
                     object? recipeData = null;
@@ -427,6 +434,7 @@ namespace Recipi_API.Controllers
                             post.Recipe.RecipeId,
                             post.Recipe.RecipeTitle,
                             post.Recipe.RecipeDescription,
+                            HasAddedToCookbook = hasAddedToCookbook,
                             User = new
                             {
                                 post.Recipe.User?.UserId,

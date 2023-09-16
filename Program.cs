@@ -73,6 +73,7 @@ builder.Services.AddSingleton<IPostService, PostService>();
 builder.Services.AddSingleton<IPostFetchService, PostFetchService>();
 builder.Services.AddSingleton<IRecipeService, RecipeService>();
 builder.Services.AddSingleton<IIngredientsService, IngredientsService>();
+builder.Services.AddSingleton<ISearchService, SearchService>();
 
 var app = builder.Build();
 

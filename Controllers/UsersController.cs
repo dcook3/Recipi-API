@@ -19,11 +19,13 @@ namespace Recipi_API.Controllers
     {
         private readonly ClaimsIdentity? claims;
         private readonly IUserService userSvc;
+        private readonly IUserMessagesService userMsg;
         private readonly IConfiguration configuration;
-        public UsersController(IUserService _userSvc, IConfiguration _configuration, IHttpContextAccessor _context)
+        public UsersController(IUserService _userSvc, IUserMessagesService _userMsg, IConfiguration _configuration, IHttpContextAccessor _context)
         {
             this.claims = (ClaimsIdentity?)_context.HttpContext?.User?.Identity;
             this.userSvc = _userSvc;
+            this.userMsg = _userMsg;
             this.configuration = _configuration;
         }
 
@@ -556,6 +558,11 @@ namespace Recipi_API.Controllers
 
                 if (await userSvc.AcceptFriend(friendRequest))
                 {
+                    Conversation convo = new Conversation();
+                    convo.UserId1 = userId;
+                    convo.UserId2 = recievingUserId;
+                    await userMsg.CreateConversation(convo);
+
                     return Ok();
                 }
                 else

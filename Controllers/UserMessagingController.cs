@@ -11,7 +11,6 @@ using System.Text;
 
 namespace Recipi_API.Controllers
 {
-    [AllowAnonymous] //Don't forget to remove this
     [Route("/api/[controller]")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "User,Admin")]
@@ -35,8 +34,8 @@ namespace Recipi_API.Controllers
         public async Task EstablishSocketConnection()
         {
             if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
-            { //Don't forget to remove this comment
-                //return BadRequest();
+            {
+                return;
             }
 
             if (HttpContext.WebSockets.IsWebSocketRequest)
@@ -55,11 +54,10 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                int currentId = 7;
-                //if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
-                //{ //Don't forget to remove this
-                //    //return BadRequest();
-                //}
+                if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
+                {
+                    return BadRequest();
+                }
 
                 List<Conversation> convos;
                 convos = await userMsging.GetConversations(currentId);
@@ -92,11 +90,10 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                int currentId = 7;
-                //if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
-                //{
-                //    return BadRequest();
-                //}
+                if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
+                {
+                    return BadRequest();
+                }
 
                 Conversation convo = new()
                 {
@@ -132,11 +129,10 @@ namespace Recipi_API.Controllers
         {
             try
             {
-                int currentId = 7;
-                //if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
-                //{
-                //    return BadRequest();
-                //}
+                if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
+                {
+                    return BadRequest();
+                }
 
                 if (await userMsging.DeleteConversation(conversationId))
                 {

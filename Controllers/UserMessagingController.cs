@@ -30,13 +30,14 @@ namespace Recipi_API.Controllers
             socketHandler = _socketHandler;
         }
 
+        [AllowAnonymous]
         [HttpGet("connect")]
         public async Task EstablishSocketConnection()
         {
-            if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
-            {
-                return;
-            }
+            //if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
+            //{
+            //    return;
+            //}
 
             if (HttpContext.WebSockets.IsWebSocketRequest)
             {

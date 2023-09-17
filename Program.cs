@@ -4,6 +4,7 @@ using Microsoft.OpenApi.Models;
 using Recipi_API.Models;
 using Recipi_API.Models.Data_Models;
 using Recipi_API.Services;
+using System.Net.WebSockets;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -74,6 +75,9 @@ builder.Services.AddSingleton<IPostFetchService, PostFetchService>();
 builder.Services.AddSingleton<IRecipeService, RecipeService>();
 builder.Services.AddSingleton<IIngredientsService, IngredientsService>();
 builder.Services.AddSingleton<ISearchService, SearchService>();
+builder.Services.AddSingleton<IUserMessagesService, UserMessagesService>();
+builder.Services.AddSingleton<IWebSocketHandler, WebSocketHandler>();
+builder.Services.AddSingleton<UserMessagingSocketService, UserMessagingSocketService>();
 
 var app = builder.Build();
 
@@ -108,5 +112,8 @@ app.MapControllers()
         .RequireClaim(ClaimTypes.Role, new string[] { "User", "Admin" })
         .Build();
     });
+
+var wsOptions = new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(120) };
+app.UseWebSockets(wsOptions);
 
 app.Run();

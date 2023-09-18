@@ -86,6 +86,49 @@ namespace Recipi_API.Controllers
             }
         }
 
+        [HttpGet("conversations/{userId}")]
+        public async Task<IActionResult> GetConversationByUserId(int userId)
+        {
+            try
+            {
+                if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
+                {
+                    return BadRequest();
+                }
+
+                List<Conversation> convos;
+                convos = await userMsging.GetConversations(currentId);
+
+                foreach (var convo in convos)
+                {
+                    if (convo.UserId1 == currentId && convo.UserId2 == userId)
+                    {
+                        return Ok(convo);
+                    }
+                    if (convo.UserId2 == userId && convo.UserId1 == userId)
+                    {
+                        return Ok(convo);
+                    }
+                }
+                return NotFound();
+            }
+            catch (Exception ex)
+            {
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
+        }
+
         [HttpPost("conversations")]
         public async Task<IActionResult> CreateConversation(int userId)
         {
@@ -158,115 +201,113 @@ namespace Recipi_API.Controllers
             }
         }
 
-        //[HttpGet("messages")]
-        //public async Task<IActionResult> GetMessages()
-        //{
-        //    try
-        //    {
-        //        int currentId = 7;
-        //        //if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
-        //        //{ //Don't forget to remove this
-        //        //    //return BadRequest();
-        //        //}
+        [HttpGet("messages/{conversationId}")]
+        public async Task<IActionResult> GetMessages(int conversationId)
+        {
+            try
+            {
+                if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
+                {
+                    return BadRequest();
+                }
 
-        //        List<Conversation> convos;
-        //        convos = await userMsging.GetMessages(currentId);
+                List<Message> convos;
+                convos = await userMsging.GetMessagesFromConversation(conversationId);
 
-        //        if (convos.Count > 0)
-        //        {
-        //            return Ok(convos);
-        //        }
-        //        return Ok();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
-        //        {
-        //            if (ex.InnerException != null)
-        //            {
-        //                return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
-        //            }
-        //            return StatusCode(500, ex.Message);
-        //        }
-        //        else
-        //        {
-        //            return StatusCode(500, "Internal server error. Please try again later.");
-        //        }
-        //    }
-        //}
+                if (convos.Count > 0)
+                {
+                    return Ok(convos);
+                }
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
+        }
 
-        //[HttpPost("conversations")]
-        //public async Task<IActionResult> CreateConversation(int userId)
-        //{
-        //    try
-        //    {
-        //        int currentId = 7;
-        //        //if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
-        //        //{
-        //        //    return BadRequest();
-        //        //}
+        [HttpPost("messages")]
+        public async Task<IActionResult> CreateMessage(int conversationId, string messageContents)
+        {
+            try
+            {
+                if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
+                {
+                    return BadRequest();
+                }
 
-        //        Conversation convo = new()
-        //        {
-        //            UserId1 = currentId,
-        //            UserId2 = userId,
-        //            Messages = new List<Message>(),
-        //        };
-        //        if (await userMsging.CreateConversation(convo))
-        //        {
-        //            return Ok(new { convo.ConversationId });
-        //        }
-        //        return StatusCode(500);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
-        //        {
-        //            if (ex.InnerException != null)
-        //            {
-        //                return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
-        //            }
-        //            return StatusCode(500, ex.Message);
-        //        }
-        //        else
-        //        {
-        //            return StatusCode(500, "Internal server error. Please try again later.");
-        //        }
-        //    }
-        //}
-        //
-        //[HttpDelete("conversations")]
-        //public async Task<IActionResult> DeleteConversation(int conversationId)
-        //{
-        //    try
-        //    {
-        //        int currentId = 7;
-        //        //if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
-        //        //{
-        //        //    return BadRequest();
-        //        //}
+                Message msg = new()
+                {
+                    SendingUserId = currentId,
+                    ConversationId = conversationId,
+                    MessageContents = messageContents,
+                    SentDatetime = DateTime.UtcNow,
+                };
+                if (await userMsging.CreateMessage(msg))
+                {
+                    return Ok(new { msg.MessageId });
+                }
+                return StatusCode(500);
+            }
+            catch (Exception ex)
+            {
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
+        }
+        
+        [HttpDelete("messages")]
+        public async Task<IActionResult> DeleteMessage(int messageId)
+        {
+            try
+            {
+                if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
+                {
+                    return BadRequest();
+                }
 
-        //        if (await userMsging.DeleteConversation(conversationId))
-        //        {
-        //            return Ok();
-        //        }
-        //        return StatusCode(500);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
-        //        {
-        //            if (ex.InnerException != null)
-        //            {
-        //                return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
-        //            }
-        //            return StatusCode(500, ex.Message);
-        //        }
-        //        else
-        //        {
-        //            return StatusCode(500, "Internal server error. Please try again later.");
-        //        }
-        //    }
-        //}
+                if (await userMsging.DeleteMessage(messageId))
+                {
+                    return Ok();
+                }
+                return StatusCode(500);
+            }
+            catch (Exception ex)
+            {
+                if (claims != null && claims.FindFirst(ClaimTypes.Role)!.Value == "Developer")
+                {
+                    if (ex.InnerException != null)
+                    {
+                        return StatusCode(500, ex.InnerException.Message + "\n" + ex.Message);
+                    }
+                    return StatusCode(500, ex.Message);
+                }
+                else
+                {
+                    return StatusCode(500, "Internal server error. Please try again later.");
+                }
+            }
+        }
     }
 }

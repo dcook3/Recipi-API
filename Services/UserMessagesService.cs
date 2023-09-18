@@ -55,16 +55,9 @@ namespace Recipi_API.Services
             return res > 0;
         }
 
-        public async Task<bool> UpdateMessage(Message msg)
+        public async Task<bool> DeleteMessage(int msgID)
         {
-            db.Messages.Update(msg);
-            var res = await db.SaveChangesAsync();
-            return res > 0;
-        }
-
-        public async Task<bool> DeleteMessage(Message msg)
-        {
-            db.Messages.Remove(msg);
+            db.Messages.RemoveRange(db.Messages.Where(msg => msg.MessageId == msgID));
             var res = await db.SaveChangesAsync();
             return res > 0;
         }

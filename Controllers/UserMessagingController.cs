@@ -31,13 +31,13 @@ namespace Recipi_API.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("connect/{conversationId}")]
-        public async Task EstablishSocketConnection(int conversationId)
+        [HttpGet("connect/{currentId}/{conversationId}")]
+        public async Task EstablishSocketConnection(int currentId, int conversationId)
         {
-            if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
-            {
-                return;
-            }
+            //if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
+            //{
+            //    return;
+            //}
 
             if (HttpContext.WebSockets.IsWebSocketRequest)
             {

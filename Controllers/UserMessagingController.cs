@@ -218,7 +218,7 @@ namespace Recipi_API.Controllers
                 {
                     return Ok(convos);
                 }
-                return Ok();
+                return NotFound();
             }
             catch (Exception ex)
             {

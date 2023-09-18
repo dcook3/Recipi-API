@@ -5,6 +5,6 @@ namespace Recipi_API.Services
 {
     public interface IWebSocketHandler
     {
-        public Task HandleConnection(Guid id, WebSocket webSocket, IWebSocketService webSocketService);
+        public Task HandleConnection(int userId, int conversationId, WebSocket webSocket, IWebSocketService webSocketService);
     }
 }

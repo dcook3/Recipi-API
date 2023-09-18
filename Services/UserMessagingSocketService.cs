@@ -12,7 +12,7 @@ namespace Recipi_API.Services
             await SendMessageToSockets(message, websocketConnections);
         }
 
-        public async Task<string?> ReceiveMessage(Guid id, WebSocket webSocket)
+        public async Task<string?> ReceiveMessage(int id, int conversationId, WebSocket webSocket)
         {
             var arraySegment = new ArraySegment<byte>(new byte[1024 * 4]);
 
@@ -30,7 +30,7 @@ namespace Recipi_API.Services
                     var message = Encoding.Default.GetString(arraySegment).TrimEnd('\0');
                     if (!string.IsNullOrWhiteSpace(message))
                     {
-                        return ($"Id: {id} - {message}");
+                        return ($"{id},{conversationId},{message}");
                     }
                 }
             }

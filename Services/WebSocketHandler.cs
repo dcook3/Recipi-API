@@ -15,19 +15,21 @@ namespace Recipi_API.Services
     {
         List<SocketConnection> websocketConnections = new List<SocketConnection>();
 
-        public async Task HandleConnection(Guid id, WebSocket webSocket, IWebSocketService socketService)
+        public async Task HandleConnection(int userId, int conversationId, WebSocket webSocket, IWebSocketService socketService)
         {
+            Guid socketID = new Guid();
             lock (websocketConnections) {
               websocketConnections.Add(new SocketConnection {
-                  Id = id,
+                  Id = socketID,
+                  ConversationId = conversationId,
+                  UserId = userId,
                   WebSocket = webSocket
               });
             }
 
-            await socketService.SendMessageToSockets($"Socket {id} is online", websocketConnections);
             while (webSocket.State == WebSocketState.Open)
             {
-                var message = await socketService.ReceiveMessage(id, webSocket);
+                var message = await socketService.ReceiveMessage(userId, conversationId, webSocket);
                 if (message != null && message != "close")
                 {
                     await socketService.SendMessageToSockets(message, websocketConnections);

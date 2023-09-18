@@ -31,18 +31,18 @@ namespace Recipi_API.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("connect")]
-        public async Task EstablishSocketConnection()
+        [HttpGet("connect/{conversationId}")]
+        public async Task EstablishSocketConnection(int conversationId)
         {
-            //if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
-            //{
-            //    return;
-            //}
+            if (claims == null || !int.TryParse(claims.FindFirst("Id")?.Value, out int currentId))
+            {
+                return;
+            }
 
             if (HttpContext.WebSockets.IsWebSocketRequest)
             {
                 WebSocket webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-                await socketHandler.HandleConnection(Guid.NewGuid(), webSocket, socketService);
+                await socketHandler.HandleConnection(currentId, conversationId, webSocket, socketService);
             }
             else
             {

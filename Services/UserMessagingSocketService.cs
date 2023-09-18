@@ -30,7 +30,8 @@ namespace Recipi_API.Services
                     var message = Encoding.Default.GetString(arraySegment).TrimEnd('\0');
                     if (!string.IsNullOrWhiteSpace(message))
                     {
-                        return ($"{id},{conversationId},{message}");
+                        string horribleDelimeter = "${}/-Itwouldbeanawfulcoincidence";
+                        return ($"{id}{horribleDelimeter}{conversationId}{horribleDelimeter}{message}");
                     }
                 }
             }
